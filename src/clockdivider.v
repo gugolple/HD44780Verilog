@@ -1,11 +1,13 @@
-module clockdivider 
+module clockdivider
+#(
+  // Short config sets the module to work in 4 bit wide
+  parameter CLOCK_COUNT = 6
+)
 (
   input clk,
   input rst,
   output reg clkdvd
 );
-// Short config sets the module to work in 4 bit wide
-parameter CLOCK_COUNT = 6;
 `define TGT_CLOCK_COUNT CLOCK_COUNT/2
 `define REG_WIDTH $clog2(CLOCK_COUNT)
 reg [`REG_WIDTH-1:0]CNT;

@@ -25,7 +25,7 @@ generate
   for (i = 0; i < `LEDARRAY; i = i + 1) begin : ckd
       clockdivider
       #(
-        .CLOCK_COUNT(4)
+        .CLOCK_COUNT(2)
       ) (
         .clk(CONN[i]),
         .rst(rst),
@@ -36,7 +36,7 @@ endgenerate
 
 for (i = 0; i < `LEDARRAY; i = i + 1)
 begin
-  assign led[i] = CONN[i+1];
+  assign led[i] = ~CONN[i+1];
 end
 
 endmodule
