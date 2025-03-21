@@ -6,26 +6,24 @@ module top (
   output [`LEDARRAYLAST:0] led
 );
 
-`define CLKDIVSIZE 19
-`define CLKDIVLAST `CLKDIVSIZE-1
-reg [`CLKDIVLAST:0] clkdivreg;
-wire clkdiv;
-always @ (posedge clk) begin
-  if (!rst) begin
-    clkdivreg <= { `CLKDIVSIZE { 1'b0 }};
-  end else begin
-    clkdivreg <= clkdivreg + 1;
-  end
-end
+wire clk500kw;
+clockdivider
+      #(
+        .TGT_PULSE(27)
+      ) clk500k (
+        .clk(clk),
+        .rst(rst),
+        .clkdvd(clk500kw)
+      );
 
 wire [`LEDARRAY:0]CONN;
-assign CONN[0] = clkdivreg[`CLKDIVLAST];
+assign CONN[0] = clk;
 generate
   genvar i;
   for (i = 0; i < `LEDARRAY; i = i + 1) begin : ckd
       clockdivider
       #(
-        .CLOCK_COUNT(2)
+        .TGT_PULSE(3)
       ) (
         .clk(CONN[i]),
         .rst(rst),
