@@ -6,16 +6,6 @@ module top (
   output [`LEDARRAYLAST:0] led
 );
 
-wire clk500kw;
-clockdivider
-      #(
-        .TGT_PULSE(27)
-      ) clk500k (
-        .clk(clk),
-        .rst(rst),
-        .clkdvd(clk500kw)
-      );
-
 wire [`LEDARRAY:0]CONN;
 assign CONN[0] = clk;
 generate
@@ -23,7 +13,7 @@ generate
   for (i = 0; i < `LEDARRAY; i = i + 1) begin : ckd
       clockdivider
       #(
-        .TGT_PULSE(3)
+        .CLOCK_COUNT(4)
       ) (
         .clk(CONN[i]),
         .rst(rst),
