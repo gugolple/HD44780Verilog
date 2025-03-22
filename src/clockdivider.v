@@ -16,6 +16,7 @@ always @(posedge clk, negedge rst) begin
     CNT <= { `REG_WIDTH {1'b0}};
     clkdvd <= 0;
   end else begin
+    // We have to remove one because 0 is valid
     if (CNT == (`TGT_CLOCK_COUNT-1)) begin
       CNT <= { `REG_WIDTH {1'b0}};
       clkdvd <= ~clkdvd;
