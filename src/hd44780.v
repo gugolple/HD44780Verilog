@@ -1,14 +1,19 @@
-`define LONG_BUS 8
-`define SHORT_BUS 4
+//8 bit mode
+`define BUS_WIDTH 8
 module hd44780 
 (
-  output rs,
-  output rw,
   output e,
-  output [BUS_WIDTH-1:0] db
+  output [`BUS_WIDTH-1:0] db
 );
-// Short config sets the module to work in 4 bit wide
-parameter BUS_WIDTH = 8;
+`define MEMDEPTH 16
+`define MEMWIDTH 16
+
+reg [`MEMWIDTH-1:0] 	mem [0:`MEMDEPTH];
+
+// ROM initialization
+initial begin
+  $readmemh("hd44780.mem", mem);
+end
 
 
 
