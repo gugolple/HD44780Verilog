@@ -4,6 +4,8 @@ module hd44780
 (
   input clk,
   input rst,
+  input trg,
+  output busy,
   output reg e,
   output reg rs,
   output reg [`BUS_WIDTH-1:0] db
@@ -27,6 +29,7 @@ localparam [`INST_WIDTH-1:0] SD = 9'b10000000;
 // Data memory definitions
 `define DATAMEMWIDTH 8
 `define DATAMEMDEPTH 128
+`define DATAMEMADRW $clog2(`DATAMEMDEPTH)
 reg [`DATAMEMWIDTH-1:0] data [0:`DATAMEMDEPTH-1];
 
 // Clock selector
@@ -88,6 +91,8 @@ assign waitclk =
   | (counterwait10ms & demuxclksel[2])
   | (counterwait100ms & demuxclksel[3]);
 
+assign busy = trigger;
+
 // Initialization
 initial begin
   $readmemh("hd44780data.mem", data);
@@ -95,10 +100,13 @@ end
 
 `define COUNTERSTATEW 4
 reg [`COUNTERSTATEW-1:0] counterstate;
-reg clks;
+reg [`DATAMEMADRW:0] counterdataramaddress;
+reg trigger;
 reg rdy;
+reg clks;
 always @(posedge clk, negedge rst) begin
   if (!rst) begin
+    trigger = 1'b1;
     counterstate = {`COUNTERSTATEW {1'b0}};
     demuxclkval = 3; //100ms, restart wait
     iact = 1'b0;
@@ -108,182 +116,302 @@ always @(posedge clk, negedge rst) begin
     demuxclkval = 3;
     rdy = 1'b0;
   end else begin
-    // wait resstart
-    if (counterstate == 0) begin
-      if (waitclk) begin
-        // Once wait is reached, set to Function Set, first only half
-        iact = 1'b1; // Set reset for counters
-        e = 1'b1;
-        rs = 1'b0;
-        db = FS[7:4];
-        demuxclkval = 0;
-        iact = 1'b1;
-        counterstate = counterstate + 1;
+    if (!rdy) begin
+      // wait resstart
+      if (counterstate == 0) begin
+        if (waitclk) begin
+          // Once wait is reached, set to Function Set, first only half
+          iact = 1'b1; // Set reset for counters
+          e = 1'b1;
+          rs = 1'b0;
+          db = FS[7:4];
+          demuxclkval = 0;
+          iact = 1'b1;
+          counterstate = counterstate + 1;
+        end
+      end else if (counterstate == 1) begin
+        if (iact) begin
+          iact = 1'b0;
+        end else if (waitclk) begin
+          // Once wait is reached, set enable to 0, commiting instruction
+          iact = 1'b1; // Set reset for counters
+          e = 1'b0;
+          demuxclkval = 2; // Wait for 10ms
+          counterstate = counterstate + 1;
+        end
+      end else if (counterstate == 2) begin
+        if (iact) begin
+          iact = 1'b0;
+        end else if (waitclk) begin
+          // Once wait is reached, set to Function Set, this time send the two
+          // halfs, this is only top
+          iact = 1'b1; // Set reset for counters
+          e = 1'b1;
+          rs = 1'b0;
+          db = FS[7:4];
+          demuxclkval = 0;
+          iact = 1'b1;
+          counterstate = counterstate + 1;
+        end
+      end else if (counterstate == 3) begin
+        if (iact) begin
+          iact = 1'b0;
+        end else if (waitclk) begin
+          // Once wait is reached, set enable to 0, commiting instruction
+          iact = 1'b1; // Set reset for counters
+          e = 1'b0;
+          demuxclkval = 0;
+          counterstate = counterstate + 1;
+        end
+      end else if (counterstate == 4) begin
+        if (iact) begin
+          iact = 1'b0;
+        end else if (waitclk) begin
+          // Once wait is reached, set to Function Set, this time send the two
+          // halfs, this is only bottom
+          iact = 1'b1; // Set reset for counters
+          e = 1'b1;
+          rs = 1'b0;
+          db = FS[3:0];
+          demuxclkval = 0;
+          iact = 1'b1;
+          counterstate = counterstate + 1;
+        end
+      end else if (counterstate == 5) begin
+        if (iact) begin
+          iact = 1'b0;
+        end else if (waitclk) begin
+          // Once wait is reached, set enable to 0, commiting instruction
+          iact = 1'b1; // Set reset for counters
+          e = 1'b0;
+          demuxclkval = 3; // Wait for 10ms
+          counterstate = counterstate + 1;
+        end
+      end else if (counterstate == 6) begin
+        if (iact) begin
+          iact = 1'b0;
+        end else if (waitclk) begin
+          // Once wait is reached, set to Display Control, this time send the two
+          // halfs, this is only top
+          iact = 1'b1; // Set reset for counters
+          e = 1'b1;
+          rs = 1'b0;
+          db = DC[7:4];
+          demuxclkval = 0;
+          iact = 1'b1;
+          counterstate = counterstate + 1;
+        end
+      end else if (counterstate == 7) begin
+        if (iact) begin
+          iact = 1'b0;
+        end else if (waitclk) begin
+          // Once wait is reached, set enable to 0, commiting instruction
+          iact = 1'b1; // Set reset for counters
+          e = 1'b0;
+          demuxclkval = 0;
+          counterstate = counterstate + 1;
+        end
+      end else if (counterstate == 8) begin
+        if (iact) begin
+          iact = 1'b0;
+        end else if (waitclk) begin
+          // Once wait is reached, set to Display Control, this time send the two
+          // halfs, this is only bottom
+          iact = 1'b1; // Set reset for counters
+          e = 1'b1;
+          rs = 1'b0;
+          db = DC[3:0];
+          demuxclkval = 0;
+          iact = 1'b1;
+          counterstate = counterstate + 1;
+        end
+      end else if (counterstate == 9) begin
+        if (iact) begin
+          iact = 1'b0;
+        end else if (waitclk) begin
+          // Once wait is reached, set enable to 0, commiting instruction
+          iact = 1'b1; // Set reset for counters
+          e = 1'b0;
+          demuxclkval = 1; // Wait 40 us
+          counterstate = counterstate + 1;
+        end
+      end else if (counterstate == 10) begin
+        if (iact) begin
+          iact = 1'b0;
+        end else if (waitclk) begin
+          // Once wait is reached, set to Entry Mode, this time send the two
+          // halfs, this is only top
+          iact = 1'b1; // Set reset for counters
+          e = 1'b1;
+          rs = 1'b0;
+          db = EM[7:4];
+          demuxclkval = 0;
+          iact = 1'b1;
+          counterstate = counterstate + 1;
+        end
+      end else if (counterstate == 11) begin
+        if (iact) begin
+          iact = 1'b0;
+        end else if (waitclk) begin
+          // Once wait is reached, set enable to 0, commiting instruction
+          iact = 1'b1; // Set reset for counters
+          e = 1'b0;
+          demuxclkval = 0;
+          counterstate = counterstate + 1;
+        end
+      end else if (counterstate == 12) begin
+        if (iact) begin
+          iact = 1'b0;
+        end else if (waitclk) begin
+          // Once wait is reached, set to Entry Mode, this time send the two
+          // halfs, this is only bottom
+          iact = 1'b1; // Set reset for counters
+          e = 1'b1;
+          rs = 1'b0;
+          db = EM[3:0];
+          demuxclkval = 0;
+          iact = 1'b1;
+          counterstate = counterstate + 1;
+        end
+      end else if (counterstate == 13) begin
+        if (iact) begin
+          iact = 1'b0;
+        end else if (waitclk) begin
+          // Once wait is reached, set enable to 0, commiting instruction
+          iact = 1'b1; // Set reset for counters
+          e = 1'b0;
+          demuxclkval = 1; // Wait 40 us
+          counterstate = counterstate + 1;
+        end
+      end else if (counterstate == 14) begin
+        if (iact) begin
+          iact = 1'b0;
+        end else if (waitclk) begin
+          // Once wait is reached, set enable to 0, commiting instruction
+          iact = 1'b1; // Set reset for counters
+          rdy = 1'b1; // Finalized startup sequence
+          counterstate = 0; // Reset counter
+        end
       end
-    end else if (counterstate == 1) begin
-      if (iact) begin
-        iact = 1'b0;
-      end else if (waitclk) begin
-        // Once wait is reached, set enable to 0, commiting instruction
-        iact = 1'b1; // Set reset for counters
-        e = 1'b0;
-        demuxclkval = 2; // Wait for 10ms
-        counterstate = counterstate + 1;
+    end else begin
+      // Capture the trigger request
+      if (trg) begin
+        trigger = 1'b1;
       end
-    end else if (counterstate == 2) begin
-      if (iact) begin
-        iact = 1'b0;
-      end else if (waitclk) begin
-        // Once wait is reached, set to Function Set, this time send the two
-        // halfs, this is only top
-        iact = 1'b1; // Set reset for counters
-        e = 1'b1;
-        rs = 1'b0;
-        db = FS[7:4];
-        demuxclkval = 0;
-        iact = 1'b1;
-        counterstate = counterstate + 1;
-      end
-    end else if (counterstate == 3) begin
-      if (iact) begin
-        iact = 1'b0;
-      end else if (waitclk) begin
-        // Once wait is reached, set enable to 0, commiting instruction
-        iact = 1'b1; // Set reset for counters
-        e = 1'b0;
-        demuxclkval = 0;
-        counterstate = counterstate + 1;
-      end
-    end else if (counterstate == 4) begin
-      if (iact) begin
-        iact = 1'b0;
-      end else if (waitclk) begin
-        // Once wait is reached, set to Function Set, this time send the two
-        // halfs, this is only bottom
-        iact = 1'b1; // Set reset for counters
-        e = 1'b1;
-        rs = 1'b0;
-        db = FS[3:0];
-        demuxclkval = 0;
-        iact = 1'b1;
-        counterstate = counterstate + 1;
-      end
-    end else if (counterstate == 5) begin
-      if (iact) begin
-        iact = 1'b0;
-      end else if (waitclk) begin
-        // Once wait is reached, set enable to 0, commiting instruction
-        iact = 1'b1; // Set reset for counters
-        e = 1'b0;
-        demuxclkval = 3; // Wait for 10ms
-        counterstate = counterstate + 1;
-      end
-    end else if (counterstate == 6) begin
-      if (iact) begin
-        iact = 1'b0;
-      end else if (waitclk) begin
-        // Once wait is reached, set to Display Control, this time send the two
-        // halfs, this is only top
-        iact = 1'b1; // Set reset for counters
-        e = 1'b1;
-        rs = 1'b0;
-        db = DC[7:4];
-        demuxclkval = 0;
-        iact = 1'b1;
-        counterstate = counterstate + 1;
-      end
-    end else if (counterstate == 7) begin
-      if (iact) begin
-        iact = 1'b0;
-      end else if (waitclk) begin
-        // Once wait is reached, set enable to 0, commiting instruction
-        iact = 1'b1; // Set reset for counters
-        e = 1'b0;
-        demuxclkval = 0;
-        counterstate = counterstate + 1;
-      end
-    end else if (counterstate == 8) begin
-      if (iact) begin
-        iact = 1'b0;
-      end else if (waitclk) begin
-        // Once wait is reached, set to Display Control, this time send the two
-        // halfs, this is only bottom
-        iact = 1'b1; // Set reset for counters
-        e = 1'b1;
-        rs = 1'b0;
-        db = DC[3:0];
-        demuxclkval = 0;
-        iact = 1'b1;
-        counterstate = counterstate + 1;
-      end
-    end else if (counterstate == 9) begin
-      if (iact) begin
-        iact = 1'b0;
-      end else if (waitclk) begin
-        // Once wait is reached, set enable to 0, commiting instruction
-        iact = 1'b1; // Set reset for counters
-        e = 1'b0;
-        demuxclkval = 1; // Wait 40 us
-        counterstate = counterstate + 1;
-      end
-    end else if (counterstate == 10) begin
-      if (iact) begin
-        iact = 1'b0;
-      end else if (waitclk) begin
-        // Once wait is reached, set to Entry Mode, this time send the two
-        // halfs, this is only top
-        iact = 1'b1; // Set reset for counters
-        e = 1'b1;
-        rs = 1'b0;
-        db = EM[7:4];
-        demuxclkval = 0;
-        iact = 1'b1;
-        counterstate = counterstate + 1;
-      end
-    end else if (counterstate == 11) begin
-      if (iact) begin
-        iact = 1'b0;
-      end else if (waitclk) begin
-        // Once wait is reached, set enable to 0, commiting instruction
-        iact = 1'b1; // Set reset for counters
-        e = 1'b0;
-        demuxclkval = 0;
-        counterstate = counterstate + 1;
-      end
-    end else if (counterstate == 12) begin
-      if (iact) begin
-        iact = 1'b0;
-      end else if (waitclk) begin
-        // Once wait is reached, set to Entry Mode, this time send the two
-        // halfs, this is only bottom
-        iact = 1'b1; // Set reset for counters
-        e = 1'b1;
-        rs = 1'b0;
-        db = EM[3:0];
-        demuxclkval = 0;
-        iact = 1'b1;
-        counterstate = counterstate + 1;
-      end
-    end else if (counterstate == 13) begin
-      if (iact) begin
-        iact = 1'b0;
-      end else if (waitclk) begin
-        // Once wait is reached, set enable to 0, commiting instruction
-        iact = 1'b1; // Set reset for counters
-        e = 1'b0;
-        demuxclkval = 1; // Wait 40 us
-        counterstate = counterstate + 1;
-      end
-    end else if (counterstate == 14) begin
-      if (iact) begin
-        iact = 1'b0;
-      end else if (waitclk) begin
-        // Once wait is reached, set enable to 0, commiting instruction
-        iact = 1'b1; // Set reset for counters
-        rdy = 1'b1; // Finalized startup sequence
+      if (trigger) begin
+        if (counterstate == 0) begin
+          if (iact) begin
+            iact = 1'b0;
+          end else if (waitclk) begin
+            // Once wait is reached, set to Set DDRam Address, this time send the two
+            // halfs, this is only top
+            iact = 1'b1; // Set reset for counters
+            counterdataramaddress = 0;
+            e = 1'b1;
+            rs = 1'b0;
+            db = SD[7:4];
+            demuxclkval = 0;
+            iact = 1'b1;
+            counterstate = counterstate + 1;
+          end
+        end else if (counterstate == 1) begin
+          if (iact) begin
+            iact = 1'b0;
+          end else if (waitclk) begin
+            // Once wait is reached, set enable to 0, commiting instruction
+            iact = 1'b1; // Set reset for counters
+            e = 1'b0;
+            demuxclkval = 0;
+            counterstate = counterstate + 1;
+          end
+        end else if (counterstate == 2) begin
+          if (iact) begin
+            iact = 1'b0;
+          end else if (waitclk) begin
+            // Once wait is reached, set to Set DDRam Address, this time send the two
+            // halfs, this is only bottom
+            iact = 1'b1; // Set reset for counters
+            e = 1'b1;
+            rs = 1'b0;
+            db = SD[3:0];
+            demuxclkval = 0;
+            iact = 1'b1;
+            counterstate = counterstate + 1;
+          end
+        end else if (counterstate == 3) begin
+          if (iact) begin
+            iact = 1'b0;
+          end else if (waitclk) begin
+            // Once wait is reached, set enable to 0, commiting instruction
+            iact = 1'b1; // Set reset for counters
+            e = 1'b0;
+            demuxclkval = 1;
+            counterstate = counterstate + 1;
+          end
+        // Configured for printing, restarted at address 0
+        // Now loop 128 times
+        end else if (counterstate == 4) begin
+          if (iact) begin
+            iact = 1'b0;
+          end else if (waitclk) begin
+            iact = 1'b1; // Set reset for counters
+            e = 1'b1;
+            rs = 1'b1;
+            db = data[counterdataramaddress][7:4];
+            demuxclkval = 0;
+            iact = 1'b1;
+            counterstate = counterstate + 1;
+          end
+        end else if (counterstate == 5) begin
+          if (iact) begin
+            iact = 1'b0;
+          end else if (waitclk) begin
+            iact = 1'b1; // Set reset for counters
+            e = 1'b0;
+            demuxclkval = 1;
+            counterstate = counterstate + 1;
+          end
+        end else if (counterstate == 6) begin
+          if (iact) begin
+            iact = 1'b0;
+          end else if (waitclk) begin
+            iact = 1'b1; // Set reset for counters
+            e = 1'b1;
+            rs = 1'b1;
+            db = data[counterdataramaddress][3:0];
+            demuxclkval = 0;
+            iact = 1'b1;
+            counterstate = counterstate + 1;
+          end
+        end else if (counterstate == 7) begin
+          if (iact) begin
+            counterdataramaddress = counterdataramaddress + 1;
+            iact = 1'b0;
+          end else if (waitclk) begin
+            if (counterdataramaddress == 128) begin
+              trigger = 0;
+            end
+            iact = 1'b1; // Set reset for counters
+            e = 1'b0;
+            demuxclkval = 1;
+            counterstate = 4;
+          end
+        end
       end
     end
   end
 end
+
+// Basic instruction process delay
+wire counterwait40us;
+counter #(
+    .COUNT(20),
+    .RESET(0)
+  )cnterwait40us (
+    .clk(clk),
+    .rst(rst),
+    .flag(counterwait40us)
+  );
+
 
 endmodule

@@ -1,7 +1,8 @@
 module counter
 #(
   // Short config sets the module to work in 4 bit wide
-  parameter COUNT = 6
+  parameter COUNT = 6,
+  parameter RESET = 1
 )
 (
   input clk,
@@ -17,7 +18,9 @@ always @(posedge clk, negedge rst) begin
   end else begin
     // We have to remove one because 0 is valid
     if (CNT == (COUNT-1)) begin
-      CNT = { `REG_WIDTHC {1'b0}};
+      if (RESET) begin
+        CNT = { `REG_WIDTHC {1'b0}};
+      end
       flag = 1'b1;
     end else begin
       CNT = CNT + 1;
