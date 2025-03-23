@@ -15,7 +15,7 @@ module hd44780
 // Function Select set to 4 bits, 2 Lines
 localparam [`INST_WIDTH-1:0] FS = 9'b00101000;
 // Display Control set to rotate positive
-localparam [`INST_WIDTH-1:0] DC = 9'b00001110;
+localparam [`INST_WIDTH-1:0] DC = 9'b00001100;
 // Entry Mode set to english
 localparam [`INST_WIDTH-1:0] EM = 9'b00000110;
 
@@ -28,7 +28,7 @@ localparam [`INST_WIDTH-1:0] SD = 9'b10000000;
 
 // Data memory definitions
 `define DATAMEMWIDTH 8
-`define DATAMEMDEPTH 128
+`define DATAMEMDEPTH 64
 `define DATAMEMADRW $clog2(`DATAMEMDEPTH)
 reg [`DATAMEMWIDTH-1:0] data [0:`DATAMEMDEPTH-1];
 
@@ -388,7 +388,7 @@ always @(posedge clk, negedge rst) begin
             counterdataramaddress = counterdataramaddress + 1;
             iact = 1'b0;
           end else if (waitclk) begin
-            if (counterdataramaddress == 128) begin
+            if (counterdataramaddress == `DATAMEMDEPTH) begin
               trigger = 0;
             end
             iact = 1'b1; // Set reset for counters
