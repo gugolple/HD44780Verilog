@@ -33,29 +33,25 @@ localparam [`INST_WIDTH-1:0] SDL4 = 8'hD0; // 0x80 + 0x50
 `define DATAMEMWIDTH 8
 `define DATAMEMDEPTH 16
 `define DATAMEMADRW $clog2(`DATAMEMDEPTH)
-reg [`INST_WIDTH-1:0] sdl;
-reg [`DATAMEMWIDTH-1:0] dataldata;
+wire [`INST_WIDTH-1:0] sdl;
+wire [`DATAMEMWIDTH-1:0] dataldata;
 reg [2:0] datalsel;
 reg [`DATAMEMWIDTH-1:0] datal1 [0:`DATAMEMDEPTH-1];
 reg [`DATAMEMWIDTH-1:0] datal2 [0:`DATAMEMDEPTH-1];
 reg [`DATAMEMWIDTH-1:0] datal3 [0:`DATAMEMDEPTH-1];
 reg [`DATAMEMWIDTH-1:0] datal4 [0:`DATAMEMDEPTH-1];
 
-always @(negedge clk) begin
-  if (datalsel == 0) begin
-    sdl = SDL1;
-    dataldata = datal1[counterdataramaddress];
-  end else if (datalsel == 1) begin
-    sdl = SDL2;
-    dataldata = datal2[counterdataramaddress];
-  end else if (datalsel == 2) begin
-    sdl = SDL3;
-    dataldata = datal3[counterdataramaddress];
-  end else if (datalsel == 3) begin
-    sdl = SDL4;
-    dataldata = datal4[counterdataramaddress];
-  end
-end
+assign sdl =
+  (SDL1 & {`INST_WIDTH{datalsel == 0}})
+  | (SDL2 & {`INST_WIDTH{datalsel == 1}})
+  | (SDL3 & {`INST_WIDTH{datalsel == 2}})
+  | (SDL4 & {`INST_WIDTH{datalsel == 3}});
+
+assign dataldata =
+  (datal1[counterdataramaddress] & {`DATAMEMWIDTH{datalsel == 0}})
+  | (datal2[counterdataramaddress] & {`DATAMEMWIDTH{datalsel == 1}})
+  | (datal3[counterdataramaddress] & {`DATAMEMWIDTH{datalsel == 2}})
+  | (datal4[counterdataramaddress] & {`DATAMEMWIDTH{datalsel == 3}});
 
 // Clock selector
 `define COUNTERSELECTORBITS 2
