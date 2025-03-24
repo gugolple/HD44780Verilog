@@ -24,13 +24,38 @@ localparam [`INST_WIDTH-1:0] EM = 9'b00000110;
 // Clear Display, return to position 0
 localparam [`INST_WIDTH-1:0] CD = 9'b00000001;
 // Set DDRam address to 0
-localparam [`INST_WIDTH-1:0] SD = 9'b10000000;
+localparam [`INST_WIDTH-1:0] SDL1 = 8'h80; // 0x80 + 0x00
+localparam [`INST_WIDTH-1:0] SDL2 = 8'hC0; // 0x80 + 0x40
+localparam [`INST_WIDTH-1:0] SDL3 = 8'h90; // 0x80 + 0x10
+localparam [`INST_WIDTH-1:0] SDL4 = 8'hD0; // 0x80 + 0x50
 
 // Data memory definitions
 `define DATAMEMWIDTH 8
-`define DATAMEMDEPTH 64
+`define DATAMEMDEPTH 16
 `define DATAMEMADRW $clog2(`DATAMEMDEPTH)
-reg [`DATAMEMWIDTH-1:0] data [0:`DATAMEMDEPTH-1];
+reg [`INST_WIDTH-1:0] sdl;
+reg [`DATAMEMWIDTH-1:0] dataldata;
+reg [2:0] datalsel;
+reg [`DATAMEMWIDTH-1:0] datal1 [0:`DATAMEMDEPTH-1];
+reg [`DATAMEMWIDTH-1:0] datal2 [0:`DATAMEMDEPTH-1];
+reg [`DATAMEMWIDTH-1:0] datal3 [0:`DATAMEMDEPTH-1];
+reg [`DATAMEMWIDTH-1:0] datal4 [0:`DATAMEMDEPTH-1];
+
+always @(negedge clk) begin
+  if (datalsel == 0) begin
+    sdl = SDL1;
+    dataldata = datal1[counterdataramaddress];
+  end else if (datalsel == 1) begin
+    sdl = SDL2;
+    dataldata = datal2[counterdataramaddress];
+  end else if (datalsel == 2) begin
+    sdl = SDL3;
+    dataldata = datal3[counterdataramaddress];
+  end else if (datalsel == 3) begin
+    sdl = SDL4;
+    dataldata = datal4[counterdataramaddress];
+  end
+end
 
 // Clock selector
 `define COUNTERSELECTORBITS 2
@@ -51,7 +76,7 @@ wire waitclk;
 //Enable activation
 wire counterwaitinstenable;
 counter #(
-    .COUNT(2)
+    .COUNT(20)
   )counterwaitinste (
     .clk(clk),
     .rst(rst),
@@ -75,32 +100,35 @@ counter #(
     .rst(rst),
     .flag(counterwait10ms)
   );
-// 100ms wait
-wire counterwait100ms;
+// 200ms wait
+wire counterwait200ms;
 counter #(
-    .COUNT(25000)
+    .COUNT(50000)
   )counterwait100m (
     .clk(clk),
     .rst(rst),
-    .flag(counterwait100ms)
+    .flag(counterwait200ms)
   );
 
 assign waitclk = 
   (counterwaitinstenable & demuxclksel[0]) 
   | (counterwaitinstprocess & demuxclksel[1])
   | (counterwait10ms & demuxclksel[2])
-  | (counterwait100ms & demuxclksel[3]);
+  | (counterwait200ms & demuxclksel[3]);
 
 assign busy = trigger;
 
 // Initialization
 initial begin
-  $readmemh("hd44780data.mem", data);
+  $readmemh("hd44780datal1.mem", datal1);
+  $readmemh("hd44780datal2.mem", datal2);
+  $readmemh("hd44780datal3.mem", datal3);
+  $readmemh("hd44780datal4.mem", datal4);
 end
 
 `define COUNTERSTATEW 4
 reg [`COUNTERSTATEW-1:0] counterstate;
-reg [`DATAMEMADRW:0] counterdataramaddress;
+reg [`DATAMEMADRW-1:0] counterdataramaddress;
 reg trigger;
 reg rdy;
 reg clks;
@@ -108,13 +136,14 @@ always @(posedge clk, negedge rst) begin
   if (!rst) begin
     trigger = 1'b1;
     counterstate = {`COUNTERSTATEW {1'b0}};
-    demuxclkval = 3; //100ms, restart wait
+    demuxclkval = 3; //200ms, restart wait
     iact = 1'b0;
     rs = 1'b0;
     e = 1'b0;
     db = {`BUS_WIDTH {1'b0}};
     demuxclkval = 3;
     rdy = 1'b0;
+    datalsel = 0;
   end else begin
     if (!rdy) begin
       // wait resstart
@@ -299,119 +328,113 @@ always @(posedge clk, negedge rst) begin
         trigger = 1'b1;
       end
       if (trigger) begin
-        if (counterstate == 0) begin
-          if (iact) begin
-            iact = 1'b0;
-          end else if (waitclk) begin
-            // Once wait is reached, set to Set DDRam Address, this time send the two
-            // halfs, this is only top
-            iact = 1'b1; // Set reset for counters
-            counterdataramaddress = 0;
-            e = 1'b1;
-            rs = 1'b0;
-            db = SD[7:4];
-            demuxclkval = 0;
-            iact = 1'b1;
-            counterstate = counterstate + 1;
-          end
-        end else if (counterstate == 1) begin
-          if (iact) begin
-            iact = 1'b0;
-          end else if (waitclk) begin
-            // Once wait is reached, set enable to 0, commiting instruction
-            iact = 1'b1; // Set reset for counters
-            e = 1'b0;
-            demuxclkval = 0;
-            counterstate = counterstate + 1;
-          end
-        end else if (counterstate == 2) begin
-          if (iact) begin
-            iact = 1'b0;
-          end else if (waitclk) begin
-            // Once wait is reached, set to Set DDRam Address, this time send the two
-            // halfs, this is only bottom
-            iact = 1'b1; // Set reset for counters
-            e = 1'b1;
-            rs = 1'b0;
-            db = SD[3:0];
-            demuxclkval = 0;
-            iact = 1'b1;
-            counterstate = counterstate + 1;
-          end
-        end else if (counterstate == 3) begin
-          if (iact) begin
-            iact = 1'b0;
-          end else if (waitclk) begin
-            // Once wait is reached, set enable to 0, commiting instruction
-            iact = 1'b1; // Set reset for counters
-            e = 1'b0;
-            demuxclkval = 1;
-            counterstate = counterstate + 1;
-          end
-        // Configured for printing, restarted at address 0
-        // Now loop 128 times
-        end else if (counterstate == 4) begin
-          if (iact) begin
-            iact = 1'b0;
-          end else if (waitclk) begin
-            iact = 1'b1; // Set reset for counters
-            e = 1'b1;
-            rs = 1'b1;
-            db = data[counterdataramaddress][7:4];
-            demuxclkval = 0;
-            iact = 1'b1;
-            counterstate = counterstate + 1;
-          end
-        end else if (counterstate == 5) begin
-          if (iact) begin
-            iact = 1'b0;
-          end else if (waitclk) begin
-            iact = 1'b1; // Set reset for counters
-            e = 1'b0;
-            demuxclkval = 1;
-            counterstate = counterstate + 1;
-          end
-        end else if (counterstate == 6) begin
-          if (iact) begin
-            iact = 1'b0;
-          end else if (waitclk) begin
-            iact = 1'b1; // Set reset for counters
-            e = 1'b1;
-            rs = 1'b1;
-            db = data[counterdataramaddress][3:0];
-            demuxclkval = 0;
-            iact = 1'b1;
-            counterstate = counterstate + 1;
-          end
-        end else if (counterstate == 7) begin
-          if (iact) begin
-            counterdataramaddress = counterdataramaddress + 1;
-            iact = 1'b0;
-          end else if (waitclk) begin
-            if (counterdataramaddress == `DATAMEMDEPTH) begin
-              trigger = 0;
+        if (datalsel != 4) begin
+          if (counterstate == 0) begin
+            if (iact) begin
+              iact = 1'b0;
+            end else if (waitclk) begin
+              // Once wait is reached, set to Set DDRam Address, this time send the two
+              // halfs, this is only top
+              iact = 1'b1; // Set reset for counters
+              counterdataramaddress = 0;
+              e = 1'b1;
+              rs = 1'b0;
+              db = sdl[7:4];
+              demuxclkval = 0;
+              iact = 1'b1;
+              counterstate = counterstate + 1;
             end
-            iact = 1'b1; // Set reset for counters
-            e = 1'b0;
-            demuxclkval = 1;
-            counterstate = 4;
+          end else if (counterstate == 1) begin
+            if (iact) begin
+              iact = 1'b0;
+            end else if (waitclk) begin
+              // Once wait is reached, set enable to 0, commiting instruction
+              iact = 1'b1; // Set reset for counters
+              e = 1'b0;
+              demuxclkval = 0;
+              counterstate = counterstate + 1;
+            end
+          end else if (counterstate == 2) begin
+            if (iact) begin
+              iact = 1'b0;
+            end else if (waitclk) begin
+              // Once wait is reached, set to Set DDRam Address, this time send the two
+              // halfs, this is only bottom
+              iact = 1'b1; // Set reset for counters
+              e = 1'b1;
+              rs = 1'b0;
+              db = sdl[3:0];
+              demuxclkval = 0;
+              iact = 1'b1;
+              counterstate = counterstate + 1;
+            end
+          end else if (counterstate == 3) begin
+            if (iact) begin
+              iact = 1'b0;
+            end else if (waitclk) begin
+              // Once wait is reached, set enable to 0, commiting instruction
+              iact = 1'b1; // Set reset for counters
+              e = 1'b0;
+              demuxclkval = 1;
+              counterstate = counterstate + 1;
+            end
+          // Configured for printing, restarted at address 0
+          // Now loop 16 times
+          end else if (counterstate == 4) begin
+            if (iact) begin
+              iact = 1'b0;
+            end else if (waitclk) begin
+              iact = 1'b1; // Set reset for counters
+              e = 1'b1;
+              rs = 1'b1;
+              db = dataldata[7:4];
+              demuxclkval = 0;
+              iact = 1'b1;
+              counterstate = counterstate + 1;
+            end
+          end else if (counterstate == 5) begin
+            if (iact) begin
+              iact = 1'b0;
+            end else if (waitclk) begin
+              iact = 1'b1; // Set reset for counters
+              e = 1'b0;
+              demuxclkval = 1;
+              counterstate = counterstate + 1;
+            end
+          end else if (counterstate == 6) begin
+            if (iact) begin
+              iact = 1'b0;
+            end else if (waitclk) begin
+              iact = 1'b1; // Set reset for counters
+              e = 1'b1;
+              rs = 1'b1;
+              db = dataldata[3:0];
+              demuxclkval = 0;
+              iact = 1'b1;
+              counterstate = counterstate + 1;
+            end
+          end else if (counterstate == 7) begin
+            if (iact) begin
+              counterdataramaddress = counterdataramaddress + 1;
+              iact = 1'b0;
+            end else if (waitclk) begin
+              iact = 1'b1; // Set reset for counters
+              e = 1'b0;
+              demuxclkval = 1;
+              counterstate <= 4;
+              if (counterdataramaddress == `DATAMEMDEPTH) begin
+                counterstate <= 0;
+                datalsel = datalsel + 1;
+              end
+            end
           end
+        end else begin
+          trigger = 0;
+          datalsel = 0;
         end
       end
     end
   end
 end
-
-// Basic instruction process delay
-wire counterwait40us;
-counter #(
-    .COUNT(20),
-    .RESET(0)
-  )cnterwait40us (
-    .clk(clk),
-    .rst(rst),
-    .flag(counterwait40us)
-  );
-
 
 endmodule
