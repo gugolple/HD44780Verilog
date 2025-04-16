@@ -26,7 +26,7 @@ assign rst = in ^ lastin;
 assign flag = lastin;
 
 always @(posedge clk) begin
-  lastin = in;
+  lastin <= in;
 end
 
 endmodule

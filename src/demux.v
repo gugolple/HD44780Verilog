@@ -1,11 +1,11 @@
 `define OUTWIDTH 2**BITS
 module demux
 #(
-  parameter BITS = 3
+  parameter BITS = 1
 )
 (
   input [BITS-1:0]val,
-  output reg [`OUTWIDTH:0]sel
+  output reg [`OUTWIDTH-1:0]sel
 );
 
 always @* begin

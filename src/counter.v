@@ -13,18 +13,18 @@ module counter
 reg [`REG_WIDTHC-1:0]CNT;
 always @(posedge clk, negedge rst) begin
   if (!rst) begin
-    CNT = { `REG_WIDTHC {1'b0}};
-    flag = 1'b0;
+    CNT <= { `REG_WIDTHC {1'b0}};
+    flag <= 1'b0;
   end else begin
     // We have to remove one because 0 is valid
     if (CNT == (COUNT-1)) begin
       if (RESET) begin
-        CNT = { `REG_WIDTHC {1'b0}};
+        CNT <= { `REG_WIDTHC {1'b0}};
       end
-      flag = 1'b1;
+      flag <= 1'b1;
     end else begin
-      CNT = CNT + 1;
-      flag = 1'b0;
+      CNT <= CNT + 1;
+      flag <= 1'b0;
     end
   end
 end
