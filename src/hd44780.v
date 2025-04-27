@@ -119,22 +119,21 @@ always @(posedge clk, negedge rst) begin
         timecounter <= {`TIMECOUNTERWIDHT {1'b0}}; // Set to 0
     end else begin        
         `define TIME_START 100
+        `define FUNCTION_SET_1_HIGH (`TIME_START + `POWERON_DELAY_CYCLES)
+        `define FUNCTION_SET_1_LOW (`FUNCTION_SET_1_HIGH + 1)
         // Only execute the half at first boot
+        // Wait 100 millis, send function set
         if(coldboot) begin
             case(timecounter)
-                // Wait 100 millis, send function set
-                `define FUNCTION_SET_1_HIGH (`TIME_START + `POWERON_DELAY_CYCLES)
                 `FUNCTION_SET_1_HIGH: begin
                     re <= 1'b1;
                     rrs <= 1'b0;
                     rdb <= INST_FUNCTION_SET[7:4];
                 end
-                `define FUNCTION_SET_1_LOW (`FUNCTION_SET_1_HIGH + 1)
                 `FUNCTION_SET_1_LOW: begin
                     re <= 1'b0;
                 end
             endcase
-            coldboot <= 1'b0;
         end
         case (timecounter)
             // Wait 10 millis, send function set high part
@@ -224,6 +223,7 @@ always @(posedge clk, negedge rst) begin
             // Wait 10 millis, finalize all
             `define RESET_CLEAR (`ENTRY_MODE_L_LOW + `CLEAR_SCREEN_DELAY_CYCLES + 1)
             `RESET_CLEAR: begin
+                coldboot <= 1'b0;
                 busy_reset <= 1'b0;
                 re <= 1'b0;
                 rrs <= 1'b0;
