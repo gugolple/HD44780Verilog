@@ -35,6 +35,7 @@ module hd44780
     output reg [`MAX_MEM_BITS-1:0]idataaddr,
     input [`INST_WIDTH-1:0] idata
 );
+reg coldboot = 1'b1;
 ////////////////////////////////////////////////////////////////////////////////
 // Instruction globals to configure
 ////////////////////////////////////////////////////////////////////////////////
@@ -116,20 +117,26 @@ always @(posedge clk, negedge rst) begin
         re <= 1'b0;
         rdb <= {`BUS_WIDTH {1'b0}};
         timecounter <= {`TIMECOUNTERWIDHT {1'b0}}; // Set to 0
-    end else begin
+    end else begin        
+        `define TIME_START 100
+        // Only execute the half at first boot
+        if(coldboot) begin
+            case(timecounter)
+                // Wait 100 millis, send function set
+                `define FUNCTION_SET_1_HIGH (`TIME_START + `POWERON_DELAY_CYCLES)
+                `FUNCTION_SET_1_HIGH: begin
+                    re <= 1'b1;
+                    rrs <= 1'b0;
+                    rdb <= INST_FUNCTION_SET[7:4];
+                end
+                `define FUNCTION_SET_1_LOW (`FUNCTION_SET_1_HIGH + 1)
+                `FUNCTION_SET_1_LOW: begin
+                    re <= 1'b0;
+                end
+            endcase
+            coldboot <= 1'b0;
+        end
         case (timecounter)
-            `define TIME_START 100
-            // Wait 100 millis, send function set
-            `define FUNCTION_SET_1_HIGH (`TIME_START + `POWERON_DELAY_CYCLES)
-            `FUNCTION_SET_1_HIGH: begin
-                re <= 1'b1;
-                rrs <= 1'b0;
-                rdb <= INST_FUNCTION_SET[7:4];
-            end
-            `define FUNCTION_SET_1_LOW (`FUNCTION_SET_1_HIGH + 1)
-            `FUNCTION_SET_1_LOW: begin
-                re <= 1'b0;
-            end
             // Wait 10 millis, send function set high part
             `define FUNCTION_SET_2_H_HIGH (`FUNCTION_SET_1_LOW + `CLEAR_SCREEN_DELAY_CYCLES + 1)
             `FUNCTION_SET_2_H_HIGH: begin
@@ -240,8 +247,10 @@ reg print_rst;
 reg [`PRINTCOUNTERWIDHT-1:0]printcounter;
 `define PRINT_START_DELAY 100
 always @(posedge clk, negedge rst, posedge trg) begin
-    integer i, j, tmp;
-    integer delaycounter = `PRINT_START_DELAY;
+    automatic integer i;
+    automatic integer j;
+    automatic integer tmp;
+    automatic integer delaycounter = `PRINT_START_DELAY;
     if (!rst | trg) begin
         printcounter <= {`PRINTCOUNTERWIDHT {1'b0}};
         print_rst <= 1'b1;

@@ -10,43 +10,35 @@ module top (
   output [`HD44780BUS-1:0]db
 );
 
-wire drst;
-wire debfloat;
-wire debrst;
-debouncer
-  #(
-    .COUNT(10)
-  ) debouncerst (
-    .clk(clk),
-    .in(rst),
-    .floating(debfloat),
-    .flag(debrst)
-  );
-assign drst = !debfloat | debrst;
+
+debouncer #(.DIV_CNT(20)) inc_btn(
+	.clk(clk),
+	.btn(rst),
+	.out(debrst)
+);
 
 wire clk250khz;
 clockdivider 
   #(
-    .CLOCK_COUNT(56)
+    .CLOCK_COUNT(60)
   ) clkdiv250khz (
     .clk(clk), 
-    .rst(rst),
+    .rst(debrst),
     .clkdvd(clk250khz)
   );
 
 wire busy;
 hd44780 hd44780drv1 (
     .clk(clk250khz),
-    .rst(drst),
+    .rst(debrst),
     .trg(1'b0),
     .busy(busy),
     .e(e),
     .rs(rs),
-    .db(db)
+    .db(db),
+    .idata("a")
 );
 assign led[0] = !busy;
-assign led[1] = !debfloat;
 assign led[2] = !debrst;
-assign led[3] = !drst;
 assign led[4] = !rst;
 endmodule
