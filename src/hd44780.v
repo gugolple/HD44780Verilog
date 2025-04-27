@@ -263,7 +263,7 @@ always @(posedge clk, negedge rst, posedge trg) begin
             // Loop for printing both secuences of lines
             // - First L1 and L3
             // - Second L2 and L4
-            for (i=3; i<4 ; i=i+1) begin
+            for (i=0; i<2 ; i=i+1) begin
                 // Initial set instruction
                 case (printcounter)
                     delaycounter: begin
@@ -303,8 +303,8 @@ always @(posedge clk, negedge rst, posedge trg) begin
                 // Move forward delaycounter all steps + 1 + the delay for
                 // a command.
                 delaycounter = delaycounter + 4 + `CLEAR_SCREEN_DELAY_CYCLES;
-                for(j=0; j<`PRINT_LENGTH ; j=j+1) begin
-                    tmp = (j | i << `MAX_MEM_BITS-2);
+                for(j=0; j<`PRINT_LENGTH*2 ; j=j+1) begin
+                    tmp = (j | i << `MAX_MEM_BITS-1);
                     case(printcounter)
                         delaycounter: begin
                             idataaddr <= tmp[`MAX_MEM_BITS-1:0];
