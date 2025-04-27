@@ -261,78 +261,225 @@ always @(posedge clk, negedge rst, posedge trg) begin
     end else begin
         if (busy_print) begin
             // Loop for printing both secuences of lines
-            // - First L1 and L3
-            // - Second L2 and L4
-            for (i=3; i<4 ; i=i+1) begin
-                // Initial set instruction
-                case (printcounter)
+            // Line 1
+            i = 0;
+            // Initial set instruction
+            case (printcounter)
+                delaycounter: begin
+                    busy_print <= 1'b1;
+                    pe <= 1'b1;
+                    prs <= 1'b0;
+                    pdb <= INST_SET_DDRAM_ADDR_L1[7:4];
+                end
+                delaycounter + 1: begin
+                    pe <= 1'b0;
+                end
+                delaycounter + 2: begin
+                    pe <= 1'b1;
+                    prs <= 1'b0;
+                    pdb <= INST_SET_DDRAM_ADDR_L1[3:0];
+                end
+                delaycounter + 3: begin
+                    pe <= 1'b0;
+                end
+            endcase
+            // Move forward delaycounter all steps + 1 + the delay for
+            // a command.
+            delaycounter = delaycounter + 4 + `CLEAR_SCREEN_DELAY_CYCLES;
+            for(j=0; j<`PRINT_LENGTH ; j=j+1) begin
+                tmp = (j | i << `MAX_MEM_BITS-2);
+                case(printcounter)
                     delaycounter: begin
-                        busy_print <= 1'b1;
+                        idataaddr <= tmp[`MAX_MEM_BITS-1:0];
                         pe <= 1'b1;
-                        prs <= 1'b0;
-                        if (i == 0) begin
-                            pdb <= INST_SET_DDRAM_ADDR_L1[7:4];
-                        end else if (i == 1) begin
-                            pdb <= INST_SET_DDRAM_ADDR_L2[7:4];
-                        end else if (i == 2) begin
-                            pdb <= INST_SET_DDRAM_ADDR_L3[7:4];
-                        end else if (i == 3) begin
-                            pdb <= INST_SET_DDRAM_ADDR_L4[7:4];
-                        end
+                        prs <= 1'b1;
                     end
                     delaycounter + 1: begin
-                        pe <= 1'b0;
+                        pdb <= idata[7:4];
                     end
                     delaycounter + 2: begin
-                        pe <= 1'b1;
-                        prs <= 1'b0;
-                        if (i == 0) begin
-                            pdb <= INST_SET_DDRAM_ADDR_L1[3:0];
-                        end else if (i == 1) begin
-                            pdb <= INST_SET_DDRAM_ADDR_L2[3:0];
-                        end else if (i == 2) begin
-                            pdb <= INST_SET_DDRAM_ADDR_L3[3:0];
-                        end else if (i == 3) begin
-                            pdb <= INST_SET_DDRAM_ADDR_L4[3:0];
-                        end
+                        pe <= 1'b0;
                     end
                     delaycounter + 3: begin
+                        idataaddr <= tmp[`MAX_MEM_BITS-1:0];
+                        pe <= 1'b1;
+                        prs <= 1'b1;
+                    end
+                    delaycounter + 4: begin
+                        pdb <= idata[3:0];
+                    end
+                    delaycounter + 5: begin
                         pe <= 1'b0;
                     end
                 endcase
                 // Move forward delaycounter all steps + 1 + the delay for
                 // a command.
-                delaycounter = delaycounter + 4 + `CLEAR_SCREEN_DELAY_CYCLES;
-                for(j=0; j<`PRINT_LENGTH ; j=j+1) begin
-                    tmp = (j | i << `MAX_MEM_BITS-2);
-                    case(printcounter)
-                        delaycounter: begin
-                            idataaddr <= tmp[`MAX_MEM_BITS-1:0];
-                            pe <= 1'b1;
-                            prs <= 1'b1;
-                        end
-                        delaycounter + 1: begin
-                            pdb <= idata[7:4];
-                        end
-                        delaycounter + 2: begin
-                            pe <= 1'b0;
-                        end
-                        delaycounter + 3: begin
-                            idataaddr <= tmp[`MAX_MEM_BITS-1:0];
-                            pe <= 1'b1;
-                            prs <= 1'b1;
-                        end
-                        delaycounter + 4: begin
-                            pdb <= idata[3:0];
-                        end
-                        delaycounter + 5: begin
-                            pe <= 1'b0;
-                        end
-                    endcase
-                    // Move forward delaycounter all steps + 1 + the delay for
-                    // a command.
-                    delaycounter = delaycounter + 6 + `COMMAND_DELAY_CYCLES;
+                delaycounter = delaycounter + 6 + `COMMAND_DELAY_CYCLES;
+            end
+            // L2
+            i = 1;
+            // Initial set instruction
+            case (printcounter)
+                delaycounter: begin
+                    busy_print <= 1'b1;
+                    pe <= 1'b1;
+                    prs <= 1'b0;
+                    pdb <= INST_SET_DDRAM_ADDR_L2[7:4];
                 end
+                delaycounter + 1: begin
+                    pe <= 1'b0;
+                end
+                delaycounter + 2: begin
+                    pe <= 1'b1;
+                    prs <= 1'b0;
+                        pdb <= INST_SET_DDRAM_ADDR_L2[3:0];
+                end
+                delaycounter + 3: begin
+                    pe <= 1'b0;
+                end
+            endcase
+            // Move forward delaycounter all steps + 1 + the delay for
+            // a command.
+            delaycounter = delaycounter + 4 + `CLEAR_SCREEN_DELAY_CYCLES;
+            for(j=0; j<`PRINT_LENGTH ; j=j+1) begin
+                tmp = (j | i << `MAX_MEM_BITS-2);
+                case(printcounter)
+                    delaycounter: begin
+                        idataaddr <= tmp[`MAX_MEM_BITS-1:0];
+                        pe <= 1'b1;
+                        prs <= 1'b1;
+                    end
+                    delaycounter + 1: begin
+                        pdb <= idata[7:4];
+                    end
+                    delaycounter + 2: begin
+                        pe <= 1'b0;
+                    end
+                    delaycounter + 3: begin
+                        idataaddr <= tmp[`MAX_MEM_BITS-1:0];
+                        pe <= 1'b1;
+                        prs <= 1'b1;
+                    end
+                    delaycounter + 4: begin
+                        pdb <= idata[3:0];
+                    end
+                    delaycounter + 5: begin
+                        pe <= 1'b0;
+                    end
+                endcase
+                // Move forward delaycounter all steps + 1 + the delay for
+                // a command.
+                delaycounter = delaycounter + 6 + `COMMAND_DELAY_CYCLES;
+            end
+            // L3
+            i = 2;
+            // Initial set instruction
+            case (printcounter)
+                delaycounter: begin
+                    busy_print <= 1'b1;
+                    pe <= 1'b1;
+                    prs <= 1'b0;
+                    pdb <= INST_SET_DDRAM_ADDR_L3[7:4];
+                end
+                delaycounter + 1: begin
+                    pe <= 1'b0;
+                end
+                delaycounter + 2: begin
+                    pe <= 1'b1;
+                    prs <= 1'b0;
+                    pdb <= INST_SET_DDRAM_ADDR_L3[3:0];
+                end
+                delaycounter + 3: begin
+                    pe <= 1'b0;
+                end
+            endcase
+            // Move forward delaycounter all steps + 1 + the delay for
+            // a command.
+            delaycounter = delaycounter + 4 + `CLEAR_SCREEN_DELAY_CYCLES;
+            for(j=0; j<`PRINT_LENGTH ; j=j+1) begin
+                tmp = (j | i << `MAX_MEM_BITS-2);
+                case(printcounter)
+                    delaycounter: begin
+                        idataaddr <= tmp[`MAX_MEM_BITS-1:0];
+                        pe <= 1'b1;
+                        prs <= 1'b1;
+                    end
+                    delaycounter + 1: begin
+                        pdb <= idata[7:4];
+                    end
+                    delaycounter + 2: begin
+                        pe <= 1'b0;
+                    end
+                    delaycounter + 3: begin
+                        idataaddr <= tmp[`MAX_MEM_BITS-1:0];
+                        pe <= 1'b1;
+                        prs <= 1'b1;
+                    end
+                    delaycounter + 4: begin
+                        pdb <= idata[3:0];
+                    end
+                    delaycounter + 5: begin
+                        pe <= 1'b0;
+                    end
+                endcase
+                // Move forward delaycounter all steps + 1 + the delay for
+                // a command.
+                delaycounter = delaycounter + 6 + `COMMAND_DELAY_CYCLES;
+            end
+            // L4
+            i = 3;
+            // Initial set instruction
+            case (printcounter)
+                delaycounter: begin
+                    busy_print <= 1'b1;
+                    pe <= 1'b1;
+                    prs <= 1'b0;
+                    pdb <= INST_SET_DDRAM_ADDR_L4[7:4];
+                end
+                delaycounter + 1: begin
+                    pe <= 1'b0;
+                end
+                delaycounter + 2: begin
+                    pe <= 1'b1;
+                    prs <= 1'b0;
+                    pdb <= INST_SET_DDRAM_ADDR_L4[3:0];
+                end
+                delaycounter + 3: begin
+                    pe <= 1'b0;
+                end
+            endcase
+            // Move forward delaycounter all steps + 1 + the delay for
+            // a command.
+            delaycounter = delaycounter + 4 + `CLEAR_SCREEN_DELAY_CYCLES;
+            for(j=0; j<`PRINT_LENGTH ; j=j+1) begin
+                tmp = (j | i << `MAX_MEM_BITS-2);
+                case(printcounter)
+                    delaycounter: begin
+                        idataaddr <= tmp[`MAX_MEM_BITS-1:0];
+                        pe <= 1'b1;
+                        prs <= 1'b1;
+                    end
+                    delaycounter + 1: begin
+                        pdb <= idata[7:4];
+                    end
+                    delaycounter + 2: begin
+                        pe <= 1'b0;
+                    end
+                    delaycounter + 3: begin
+                        idataaddr <= tmp[`MAX_MEM_BITS-1:0];
+                        pe <= 1'b1;
+                        prs <= 1'b1;
+                    end
+                    delaycounter + 4: begin
+                        pdb <= idata[3:0];
+                    end
+                    delaycounter + 5: begin
+                        pe <= 1'b0;
+                    end
+                endcase
+                // Move forward delaycounter all steps + 1 + the delay for
+                // a command.
+                delaycounter = delaycounter + 6 + `COMMAND_DELAY_CYCLES;
             end
         end
         if (!busy_reset & (printcounter <= delaycounter)) begin
