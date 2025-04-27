@@ -12,7 +12,7 @@
     </FlowState>
     <ResultFileList>
         <ResultFile ResultFileType="RES.netlist" ResultFilePath="impl/gwsynthesis/fpga_hd44780.vg"/>
-        <ResultFile ResultFileType="RES.pnr.bitstream" ResultFilePath="impl/pnr/fpga_hd44780.fs"/>
+        <ResultFile ResultFileType="RES.pnr.bitstream" ResultFilePath="impl/pnr/ao_0.fs"/>
         <ResultFile ResultFileType="RES.pnr.pin.rpt" ResultFilePath="impl/pnr/fpga_hd44780.pin.html"/>
         <ResultFile ResultFileType="RES.pnr.posp.bin" ResultFilePath="impl/pnr/fpga_hd44780.db"/>
         <ResultFile ResultFileType="RES.pnr.pwr.rpt" ResultFilePath="impl/pnr/fpga_hd44780.power.html"/>

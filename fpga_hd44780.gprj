@@ -11,5 +11,6 @@
         <File path="src/hd44780.v" type="file.verilog" enable="1"/>
         <File path="src/top.v" type="file.verilog" enable="1"/>
         <File path="src/fpga_hd44780.cst" type="file.cst" enable="1"/>
+        <File path="src/fpga_hd44780.rao" type="file.gao" enable="1"/>
     </FileList>
 </Project>
