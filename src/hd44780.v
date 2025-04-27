@@ -16,7 +16,7 @@
 //8 bit mode
 `define BUS_WIDTH 4
 `define LINE_WIDTH 16
-`define PRINT_LENGTH 2*`LINE_WIDTH
+`define PRINT_LENGTH `LINE_WIDTH
 `define MAX_MEM 4*`LINE_WIDTH
 `define MAX_MEM_BITS $clog2(`MAX_MEM)
 module hd44780
@@ -79,18 +79,18 @@ localparam [`INST_WIDTH-1:0]INST_SET_CGRAM_ADDR  = 8'b01000000;
 // They are used to set at the line start
 localparam INST_SET_DDRAM_ADDR_MASK = 8'b01111111;
 localparam [`INST_WIDTH-1:0]INST_SET_DDRAM_ADDR  = 8'b10000000;
-localparam HD44780_START_ADD_L1 = 'h00;
-localparam HD44780_START_ADD_L2 = 'h40;
-localparam HD44780_START_ADD_L3 = 'h10;
-localparam HD44780_START_ADD_L4 = 'h50;
+localparam HD44780_START_ADD_L1 = 8'h00;
+localparam HD44780_START_ADD_L2 = 8'h40;
+localparam HD44780_START_ADD_L3 = 8'h10;
+localparam HD44780_START_ADD_L4 = 8'h50;
 localparam [`INST_WIDTH-1:0]INST_SET_DDRAM_ADDR_L1  = INST_SET_DDRAM_ADDR
-| (INST_SET_DDRAM_ADDR_MASK & HD44780_START_ADD_L1);
+| HD44780_START_ADD_L1;
 localparam [`INST_WIDTH-1:0]INST_SET_DDRAM_ADDR_L2  = INST_SET_DDRAM_ADDR
-| (INST_SET_DDRAM_ADDR_MASK & HD44780_START_ADD_L2);
+| HD44780_START_ADD_L2;
 localparam [`INST_WIDTH-1:0]INST_SET_DDRAM_ADDR_L3  = INST_SET_DDRAM_ADDR
-| (INST_SET_DDRAM_ADDR_MASK & HD44780_START_ADD_L3);
+| HD44780_START_ADD_L3;
 localparam [`INST_WIDTH-1:0]INST_SET_DDRAM_ADDR_L4  = INST_SET_DDRAM_ADDR
-| (INST_SET_DDRAM_ADDR_MASK & HD44780_START_ADD_L4);
+| HD44780_START_ADD_L4;
 
 //// Debug for the macros/localparam definitions
 //// It is shown at the beginning of the test/run
@@ -263,7 +263,7 @@ always @(posedge clk, negedge rst, posedge trg) begin
             // Loop for printing both secuences of lines
             // - First L1 and L3
             // - Second L2 and L4
-            for (i=0; i<2 ; i=i+1) begin
+            for (i=3; i<4 ; i=i+1) begin
                 // Initial set instruction
                 case (printcounter)
                     delaycounter: begin
@@ -274,6 +274,10 @@ always @(posedge clk, negedge rst, posedge trg) begin
                             pdb <= INST_SET_DDRAM_ADDR_L1[7:4];
                         end else if (i == 1) begin
                             pdb <= INST_SET_DDRAM_ADDR_L2[7:4];
+                        end else if (i == 2) begin
+                            pdb <= INST_SET_DDRAM_ADDR_L3[7:4];
+                        end else if (i == 3) begin
+                            pdb <= INST_SET_DDRAM_ADDR_L4[7:4];
                         end
                     end
                     delaycounter + 1: begin
@@ -286,6 +290,10 @@ always @(posedge clk, negedge rst, posedge trg) begin
                             pdb <= INST_SET_DDRAM_ADDR_L1[3:0];
                         end else if (i == 1) begin
                             pdb <= INST_SET_DDRAM_ADDR_L2[3:0];
+                        end else if (i == 2) begin
+                            pdb <= INST_SET_DDRAM_ADDR_L3[3:0];
+                        end else if (i == 3) begin
+                            pdb <= INST_SET_DDRAM_ADDR_L4[3:0];
                         end
                     end
                     delaycounter + 3: begin
@@ -294,9 +302,9 @@ always @(posedge clk, negedge rst, posedge trg) begin
                 endcase
                 // Move forward delaycounter all steps + 1 + the delay for
                 // a command.
-                delaycounter = delaycounter + 4 + `COMMAND_DELAY_CYCLES;
+                delaycounter = delaycounter + 4 + `CLEAR_SCREEN_DELAY_CYCLES;
                 for(j=0; j<`PRINT_LENGTH ; j=j+1) begin
-                    tmp = (j | i << `MAX_MEM_BITS-1);
+                    tmp = (j | i << `MAX_MEM_BITS-2);
                     case(printcounter)
                         delaycounter: begin
                             idataaddr <= tmp[`MAX_MEM_BITS-1:0];
