@@ -283,9 +283,11 @@ always @(posedge clk, negedge rst, posedge trg) begin
                         pe <= 1'b0;
                     end
                 endcase
-                delaycounter = delaycounter + 3 + `COMMAND_DELAY_CYCLES;
+                // Move forward delaycounter all steps + 1 + the delay for
+                // a command.
+                delaycounter = delaycounter + 4 + `COMMAND_DELAY_CYCLES;
                 for(j=0; j<`PRINT_LENGTH ; j=j+1) begin
-                    tmp = (j | i << `MAX_MEM_BITS-2);
+                    tmp = (j | i << `MAX_MEM_BITS-1);
                     case(printcounter)
                         delaycounter: begin
                             idataaddr <= tmp[`MAX_MEM_BITS-1:0];
@@ -310,6 +312,9 @@ always @(posedge clk, negedge rst, posedge trg) begin
                             pe <= 1'b0;
                         end
                     endcase
+                    // Move forward delaycounter all steps + 1 + the delay for
+                    // a command.
+                    delaycounter = delaycounter + 6 + `COMMAND_DELAY_CYCLES;
                 end
             end
         end
