@@ -121,7 +121,7 @@ always @(posedge clk, negedge rst) begin
     end else begin        
         `define TIME_START 100
         `define FUNCTION_SET_1_HIGH (`TIME_START + `POWERON_DELAY_CYCLES)
-        `define FUNCTION_SET_1_LOW (`FUNCTION_SET_1_HIGH + `INTER_INSTRUCTION_DELAY)
+        `define FUNCTION_SET_1_LOW (`FUNCTION_SET_1_HIGH + 1)
         // Only execute the half at first boot
         // Wait 100 millis, send function set
         if(coldboot) begin
@@ -138,91 +138,91 @@ always @(posedge clk, negedge rst) begin
         end
         case (timecounter)
             // Wait 10 millis, send function set high part
-            `define FUNCTION_SET_2_H_HIGH (`FUNCTION_SET_1_LOW + `CLEAR_SCREEN_DELAY_CYCLES + `INTER_INSTRUCTION_DELAY)
+            `define FUNCTION_SET_2_H_HIGH (`FUNCTION_SET_1_LOW + `CLEAR_SCREEN_DELAY_CYCLES + 1)
             `FUNCTION_SET_2_H_HIGH: begin
                 re <= 1'b1;
                 rrs <= 1'b0;
                 rdb <= INST_FUNCTION_SET[7:4];
             end
-            `define FUNCTION_SET_2_H_LOW (`FUNCTION_SET_2_H_HIGH + `INTER_INSTRUCTION_DELAY)
+            `define FUNCTION_SET_2_H_LOW (`FUNCTION_SET_2_H_HIGH + 1)
             `FUNCTION_SET_2_H_LOW: begin
                 re <= 1'b0;
             end
-            `define FUNCTION_SET_2_L_HIGH (`FUNCTION_SET_2_H_LOW + `HALF_COMMAND_DELAY_CYCLES + `INTER_INSTRUCTION_DELAY)
+            `define FUNCTION_SET_2_L_HIGH (`FUNCTION_SET_2_H_LOW + `HALF_COMMAND_DELAY_CYCLES + 1)
             `FUNCTION_SET_2_L_HIGH: begin
                 re <= 1'b1;
                 rrs <= 1'b0;
                 rdb <= INST_FUNCTION_SET[3:0];
             end
-            `define FUNCTION_SET_2_L_LOW (`FUNCTION_SET_2_L_HIGH + `INTER_INSTRUCTION_DELAY)
+            `define FUNCTION_SET_2_L_LOW (`FUNCTION_SET_2_L_HIGH + 1)
             `FUNCTION_SET_2_L_LOW: begin
                 re <= 1'b0;
             end
             // Wait 10 millis, send function set high part
-            `define DISPLAY_CLEAR_H_HIGH (`FUNCTION_SET_2_L_LOW + `CLEAR_SCREEN_DELAY_CYCLES + `INTER_INSTRUCTION_DELAY)
+            `define DISPLAY_CLEAR_H_HIGH (`FUNCTION_SET_2_L_LOW + `CLEAR_SCREEN_DELAY_CYCLES + 1)
             `DISPLAY_CLEAR_H_HIGH: begin
                 re <= 1'b1;
                 rrs <= 1'b0;
                 rdb <= INST_DISPLAY_CLEAR[7:4];
             end
-            `define DISPLAY_CLEAR_H_LOW (`DISPLAY_CLEAR_H_HIGH + `INTER_INSTRUCTION_DELAY)
+            `define DISPLAY_CLEAR_H_LOW (`DISPLAY_CLEAR_H_HIGH + 1)
             `DISPLAY_CLEAR_H_LOW: begin
                 re <= 1'b0;
             end
-            `define DISPLAY_CLEAR_L_HIGH (`DISPLAY_CLEAR_H_LOW + `HALF_COMMAND_DELAY_CYCLES + `INTER_INSTRUCTION_DELAY)
+            `define DISPLAY_CLEAR_L_HIGH (`DISPLAY_CLEAR_H_LOW + `HALF_COMMAND_DELAY_CYCLES + 1)
             `DISPLAY_CLEAR_L_HIGH: begin
                 re <= 1'b1;
                 rrs <= 1'b0;
                 rdb <= INST_DISPLAY_CLEAR[3:0];
             end
-            `define DISPLAY_CLEAR_L_LOW (`DISPLAY_CLEAR_L_HIGH + `INTER_INSTRUCTION_DELAY)
+            `define DISPLAY_CLEAR_L_LOW (`DISPLAY_CLEAR_L_HIGH + 1)
             `DISPLAY_CLEAR_L_LOW: begin
                 re <= 1'b0;
             end
             // Wait 10 millis, send function set high part
-            `define DISPLAY_CONTROL_H_HIGH (`DISPLAY_CLEAR_L_LOW + `CLEAR_SCREEN_DELAY_CYCLES + `INTER_INSTRUCTION_DELAY)
+            `define DISPLAY_CONTROL_H_HIGH (`DISPLAY_CLEAR_L_LOW + `CLEAR_SCREEN_DELAY_CYCLES + 1)
             `DISPLAY_CONTROL_H_HIGH: begin
                 re <= 1'b1;
                 rrs <= 1'b0;
                 rdb <= G[7:4];
             end
-            `define DISPLAY_CONTROL_H_LOW (`DISPLAY_CONTROL_H_HIGH + `INTER_INSTRUCTION_DELAY)
+            `define DISPLAY_CONTROL_H_LOW (`DISPLAY_CONTROL_H_HIGH + 1)
             `DISPLAY_CONTROL_H_LOW: begin
                 re <= 1'b0;
             end
-            `define DISPLAY_CONTROL_L_HIGH (`DISPLAY_CONTROL_H_LOW + `HALF_COMMAND_DELAY_CYCLES + `INTER_INSTRUCTION_DELAY)
+            `define DISPLAY_CONTROL_L_HIGH (`DISPLAY_CONTROL_H_LOW + `HALF_COMMAND_DELAY_CYCLES + 1)
             `DISPLAY_CONTROL_L_HIGH: begin
                 re <= 1'b1;
                 rrs <= 1'b0;
                 rdb <= INST_DISPLAY_CONTROL[3:0];
             end
-            `define DISPLAY_CONTROL_L_LOW (`DISPLAY_CONTROL_L_HIGH + `INTER_INSTRUCTION_DELAY)
+            `define DISPLAY_CONTROL_L_LOW (`DISPLAY_CONTROL_L_HIGH + 1)
             `DISPLAY_CONTROL_L_LOW: begin
                 re <= 1'b0;
             end
             // Wait 10 millis, send function set high part
-            `define ENTRY_MODE_H_HIGH (`DISPLAY_CONTROL_L_LOW + `CLEAR_SCREEN_DELAY_CYCLES + `INTER_INSTRUCTION_DELAY)
+            `define ENTRY_MODE_H_HIGH (`DISPLAY_CONTROL_L_LOW + `CLEAR_SCREEN_DELAY_CYCLES + 1)
             `ENTRY_MODE_H_HIGH: begin
                 re <= 1'b1;
                 rrs <= 1'b0;
                 rdb <= INST_ENTRY_MODE[7:4];
             end
-            `define ENTRY_MODE_H_LOW (`ENTRY_MODE_H_HIGH + `INTER_INSTRUCTION_DELAY)
+            `define ENTRY_MODE_H_LOW (`ENTRY_MODE_H_HIGH + 1)
             `ENTRY_MODE_H_LOW: begin
                 re <= 1'b0;
             end
-            `define ENTRY_MODE_L_HIGH (`ENTRY_MODE_H_LOW + `HALF_COMMAND_DELAY_CYCLES + `INTER_INSTRUCTION_DELAY)
+            `define ENTRY_MODE_L_HIGH (`ENTRY_MODE_H_LOW + `HALF_COMMAND_DELAY_CYCLES + 1)
             `ENTRY_MODE_L_HIGH: begin
                 re <= 1'b1;
                 rrs <= 1'b0;
                 rdb <= INST_ENTRY_MODE[3:0];
             end
-            `define ENTRY_MODE_L_LOW (`ENTRY_MODE_L_HIGH + `INTER_INSTRUCTION_DELAY)
+            `define ENTRY_MODE_L_LOW (`ENTRY_MODE_L_HIGH + 1)
             `ENTRY_MODE_L_LOW: begin
                 re <= 1'b0;
             end
             // Wait 10 millis, finalize all
-            `define RESET_CLEAR (`ENTRY_MODE_L_LOW + `CLEAR_SCREEN_DELAY_CYCLES + `INTER_INSTRUCTION_DELAY)
+            `define RESET_CLEAR (`ENTRY_MODE_L_LOW + `CLEAR_SCREEN_DELAY_CYCLES + 1)
             `RESET_CLEAR: begin
                 coldboot <= 1'b0;
                 busy_reset <= 1'b0;
@@ -281,10 +281,10 @@ always @(posedge clk, negedge rst, posedge trg) begin
                             pdb <= INST_SET_DDRAM_ADDR_L4[7:4];
                         end
                     end
-                    delaycounter + 1 * `INTER_INSTRUCTION_DELAY: begin
+                    delaycounter + 1: begin
                         pe <= 1'b0;
                     end
-                    delaycounter + 2 * `INTER_INSTRUCTION_DELAY + `HALF_COMMAND_DELAY_CYCLES: begin
+                    delaycounter + 2 + `HALF_COMMAND_DELAY_CYCLES: begin
                         pe <= 1'b1;
                         prs <= 1'b0;
                         if (i == 0) begin
@@ -297,13 +297,13 @@ always @(posedge clk, negedge rst, posedge trg) begin
                             pdb <= INST_SET_DDRAM_ADDR_L4[3:0];
                         end
                     end
-                    delaycounter + 3 * `INTER_INSTRUCTION_DELAY + `HALF_COMMAND_DELAY_CYCLES: begin
+                    delaycounter + 3 + `HALF_COMMAND_DELAY_CYCLES: begin
                         pe <= 1'b0;
                     end
                 endcase
                 // Move forward delaycounter all steps + 1 + the delay for
                 // a command.
-                delaycounter = delaycounter + 4 * `INTER_INSTRUCTION_DELAY + `CLEAR_SCREEN_DELAY_CYCLES + `HALF_COMMAND_DELAY_CYCLES;
+                delaycounter = delaycounter + 4 + `CLEAR_SCREEN_DELAY_CYCLES + `HALF_COMMAND_DELAY_CYCLES;
                 for(j=0; j<`PRINT_LENGTH ; j=j+1) begin
                     tmp = (j | i << `MAX_MEM_BITS-1);
                     case(printcounter)
@@ -312,27 +312,27 @@ always @(posedge clk, negedge rst, posedge trg) begin
                             pe <= 1'b1;
                             prs <= 1'b1;
                         end
-                        delaycounter + 1 * `INTER_INSTRUCTION_DELAY: begin
+                        delaycounter + 1: begin
                             pdb <= idata[7:4];
                         end
-                        delaycounter + 2 * `INTER_INSTRUCTION_DELAY: begin
+                        delaycounter + 2: begin
                             pe <= 1'b0;
                         end
-                        delaycounter + 3 * `INTER_INSTRUCTION_DELAY + `HALF_COMMAND_DELAY_CYCLES: begin
+                        delaycounter + 3 + `HALF_COMMAND_DELAY_CYCLES: begin
                             idataaddr <= tmp[`MAX_MEM_BITS-1:0];
                             pe <= 1'b1;
                             prs <= 1'b1;
                         end
-                        delaycounter + 4 * `INTER_INSTRUCTION_DELAY + `HALF_COMMAND_DELAY_CYCLES: begin
+                        delaycounter + 4 + `HALF_COMMAND_DELAY_CYCLES: begin
                             pdb <= idata[3:0];
                         end
-                        delaycounter + 5 * `INTER_INSTRUCTION_DELAY + `HALF_COMMAND_DELAY_CYCLES: begin
+                        delaycounter + 5 + `HALF_COMMAND_DELAY_CYCLES: begin
                             pe <= 1'b0;
                         end
                     endcase
                     // Move forward delaycounter all steps + 1 + the delay for
                     // a command.
-                    delaycounter = delaycounter + 6 * `INTER_INSTRUCTION_DELAY + `COMMAND_DELAY_CYCLES + `HALF_COMMAND_DELAY_CYCLES;
+                    delaycounter = delaycounter + 6 + `COMMAND_DELAY_CYCLES + `HALF_COMMAND_DELAY_CYCLES;
                 end
             end
         end
