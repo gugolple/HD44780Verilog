@@ -281,7 +281,7 @@ always @(posedge clk, negedge rst, posedge trg) begin
                             pdb <= INST_SET_DDRAM_ADDR_L4[7:4];
                         end
                     end
-:                   delaycounter + 1 * `INTER_INSTRUCTION_DELAY: begin
+                    delaycounter + 1 * `INTER_INSTRUCTION_DELAY: begin
                         pe <= 1'b0;
                     end
                     delaycounter + 2 * `INTER_INSTRUCTION_DELAY + `HALF_COMMAND_DELAY_CYCLES: begin
