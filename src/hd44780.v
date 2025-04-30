@@ -184,7 +184,7 @@ always @(posedge clk, negedge rst) begin
             `DISPLAY_CONTROL_H_HIGH: begin
                 re <= 1'b1;
                 rrs <= 1'b0;
-                rdb <= G[7:4];
+                rdb <= INST_DISPLAY_CONTROL[7:4];
             end
             `define DISPLAY_CONTROL_H_LOW (`DISPLAY_CONTROL_H_HIGH + `INTER_INSTRUCTION_DELAY)
             `DISPLAY_CONTROL_H_LOW: begin
