@@ -11,6 +11,8 @@
 `define POWERON_DELAY_CYCLES `MILLI_TO_CLOCK(`POWERON_DELAY_MILLI)
 `define CLEAR_SCREEN_DELAY_MILLI 10
 `define CLEAR_SCREEN_DELAY_CYCLES `MILLI_TO_CLOCK(`CLEAR_SCREEN_DELAY_MILLI)
+`define CLEAR_SCREEN_DELAY_MILLI 10
+`define CLEAR_SCREEN_DELAY_CYCLES `MILLI_TO_CLOCK(`CLEAR_SCREEN_DELAY_MILLI)
 `define COMMAND_DELAY_MICROS 80
 `define COMMAND_DELAY_CYCLES `MICRO_TO_CLOCK(`COMMAND_DELAY_MICROS)
 `define HALF_COMMAND_DELAY_CYCLES 10
@@ -89,13 +91,13 @@ localparam HD44780_START_ADD_L2 = 8'h40;
 localparam HD44780_START_ADD_L3 = 8'h10;
 localparam HD44780_START_ADD_L4 = 8'h50;
 localparam [`INST_WIDTH-1:0]INST_SET_DDRAM_ADDR_L1  = INST_SET_DDRAM_ADDR
-| HD44780_START_ADD_L1;
+| (HD44780_START_ADD_L1 & INST_SET_DDRAM_ADDR_MASK);
 localparam [`INST_WIDTH-1:0]INST_SET_DDRAM_ADDR_L2  = INST_SET_DDRAM_ADDR
-| HD44780_START_ADD_L2;
+| (HD44780_START_ADD_L2 & INST_SET_DDRAM_ADDR_MASK);
 localparam [`INST_WIDTH-1:0]INST_SET_DDRAM_ADDR_L3  = INST_SET_DDRAM_ADDR
-| HD44780_START_ADD_L3;
+| (HD44780_START_ADD_L3 & INST_SET_DDRAM_ADDR_MASK);
 localparam [`INST_WIDTH-1:0]INST_SET_DDRAM_ADDR_L4  = INST_SET_DDRAM_ADDR
-| HD44780_START_ADD_L4;
+| (HD44780_START_ADD_L4 & INST_SET_DDRAM_ADDR_MASK);
 
 //// Debug for the macros/localparam definitions
 //// It is shown at the beginning of the test/run
@@ -162,28 +164,7 @@ always @(posedge clk, negedge rst) begin
                 re <= 1'b0;
             end
             // Wait 10 millis, send function set high part
-            `define DISPLAY_CLEAR_H_HIGH (`FUNCTION_SET_2_L_LOW + `CLEAR_SCREEN_DELAY_CYCLES + `INTER_INSTRUCTION_DELAY)
-            `DISPLAY_CLEAR_H_HIGH: begin
-                re <= 1'b1;
-                rrs <= 1'b0;
-                rdb <= INST_DISPLAY_CLEAR[7:4];
-            end
-            `define DISPLAY_CLEAR_H_LOW (`DISPLAY_CLEAR_H_HIGH + `INTER_INSTRUCTION_DELAY)
-            `DISPLAY_CLEAR_H_LOW: begin
-                re <= 1'b0;
-            end
-            `define DISPLAY_CLEAR_L_HIGH (`DISPLAY_CLEAR_H_LOW + `HALF_COMMAND_DELAY_CYCLES + `INTER_INSTRUCTION_DELAY)
-            `DISPLAY_CLEAR_L_HIGH: begin
-                re <= 1'b1;
-                rrs <= 1'b0;
-                rdb <= INST_DISPLAY_CLEAR[3:0];
-            end
-            `define DISPLAY_CLEAR_L_LOW (`DISPLAY_CLEAR_L_HIGH + `INTER_INSTRUCTION_DELAY)
-            `DISPLAY_CLEAR_L_LOW: begin
-                re <= 1'b0;
-            end
-            // Wait 10 millis, send function set high part
-            `define DISPLAY_CONTROL_H_HIGH (`DISPLAY_CLEAR_L_LOW + `CLEAR_SCREEN_DELAY_CYCLES + `INTER_INSTRUCTION_DELAY)
+            `define DISPLAY_CONTROL_H_HIGH (`FUNCTION_SET_2_L_LOW + `CLEAR_SCREEN_DELAY_CYCLES + `INTER_INSTRUCTION_DELAY)
             `DISPLAY_CONTROL_H_HIGH: begin
                 re <= 1'b1;
                 rrs <= 1'b0;
@@ -224,8 +205,29 @@ always @(posedge clk, negedge rst) begin
             `ENTRY_MODE_L_LOW: begin
                 re <= 1'b0;
             end
+            // Wait 10 millis, send function set high part
+            `define DISPLAY_CLEAR_H_HIGH (`ENTRY_MODE_L_LOW + `CLEAR_SCREEN_DELAY_CYCLES + `INTER_INSTRUCTION_DELAY)
+            `DISPLAY_CLEAR_H_HIGH: begin
+                re <= 1'b1;
+                rrs <= 1'b0;
+                rdb <= INST_DISPLAY_CLEAR[7:4];
+            end
+            `define DISPLAY_CLEAR_H_LOW (`DISPLAY_CLEAR_H_HIGH + `INTER_INSTRUCTION_DELAY)
+            `DISPLAY_CLEAR_H_LOW: begin
+                re <= 1'b0;
+            end
+            `define DISPLAY_CLEAR_L_HIGH (`DISPLAY_CLEAR_H_LOW + `HALF_COMMAND_DELAY_CYCLES + `INTER_INSTRUCTION_DELAY)
+            `DISPLAY_CLEAR_L_HIGH: begin
+                re <= 1'b1;
+                rrs <= 1'b0;
+                rdb <= INST_DISPLAY_CLEAR[3:0];
+            end
+            `define DISPLAY_CLEAR_L_LOW (`DISPLAY_CLEAR_L_HIGH + `INTER_INSTRUCTION_DELAY)
+            `DISPLAY_CLEAR_L_LOW: begin
+                re <= 1'b0;
+            end
             // Wait 10 millis, finalize all
-            `define RESET_CLEAR (`ENTRY_MODE_L_LOW + `CLEAR_SCREEN_DELAY_CYCLES + `INTER_INSTRUCTION_DELAY)
+            `define RESET_CLEAR (`DISPLAY_CLEAR_L_LOW + `CLEAR_SCREEN_DELAY_CYCLES + `INTER_INSTRUCTION_DELAY)
             `RESET_CLEAR: begin
                 coldboot <= 1'b0;
                 busy_reset <= 1'b0;
@@ -274,15 +276,13 @@ always @(posedge clk, negedge rst, posedge trg) begin
                         busy_print <= 1'b1;
                         pe <= 1'b1;
                         prs <= 1'b0;
-                        if (i == 0) begin
-                            pdb <= INST_SET_DDRAM_ADDR_L1[7:4];
-                        end else if (i == 1) begin
-                            pdb <= INST_SET_DDRAM_ADDR_L2[7:4];
-                        end else if (i == 2) begin
-                            pdb <= INST_SET_DDRAM_ADDR_L3[7:4];
-                        end else if (i == 3) begin
-                            pdb <= INST_SET_DDRAM_ADDR_L4[7:4];
-                        end
+                        case(i)
+                            0: pdb <= INST_SET_DDRAM_ADDR_L1[7:4];
+                            1: pdb <= INST_SET_DDRAM_ADDR_L2[7:4];
+                            2: pdb <= INST_SET_DDRAM_ADDR_L3[7:4];
+                            3: pdb <= INST_SET_DDRAM_ADDR_L4[7:4];
+                            default: pdb <= {`BUS_WIDTH {1'b0}};
+                        endcase
                     end
                     delaycounter + 1 * `INTER_INSTRUCTION_DELAY: begin
                         pe <= 1'b0;
@@ -290,15 +290,13 @@ always @(posedge clk, negedge rst, posedge trg) begin
                     delaycounter + 2 * `INTER_INSTRUCTION_DELAY + `HALF_COMMAND_DELAY_CYCLES: begin
                         pe <= 1'b1;
                         prs <= 1'b0;
-                        if (i == 0) begin
-                            pdb <= INST_SET_DDRAM_ADDR_L1[3:0];
-                        end else if (i == 1) begin
-                            pdb <= INST_SET_DDRAM_ADDR_L2[3:0];
-                        end else if (i == 2) begin
-                            pdb <= INST_SET_DDRAM_ADDR_L3[3:0];
-                        end else if (i == 3) begin
-                            pdb <= INST_SET_DDRAM_ADDR_L4[3:0];
-                        end
+                        case(i)
+                            0: pdb <= INST_SET_DDRAM_ADDR_L1[3:0];
+                            1: pdb <= INST_SET_DDRAM_ADDR_L2[3:0];
+                            2: pdb <= INST_SET_DDRAM_ADDR_L3[3:0];
+                            3: pdb <= INST_SET_DDRAM_ADDR_L4[3:0];
+                            default: pdb <= {`BUS_WIDTH {1'b0}};
+                        endcase
                     end
                     delaycounter + 3 * `INTER_INSTRUCTION_DELAY + `HALF_COMMAND_DELAY_CYCLES: begin
                         pe <= 1'b0;
@@ -342,7 +340,7 @@ always @(posedge clk, negedge rst, posedge trg) begin
         if (!busy_reset & (printcounter <= delaycounter)) begin
             printcounter <= printcounter + 1;
         end
-        if (printcounter >= delaycounter) begin
+        if (printcounter > delaycounter) begin
             print_rst <= 1'b0;
             busy_print <= 1'b0;
             prs <= 1'b0;
