@@ -28,6 +28,8 @@ clockdivider
   );
 
 wire busy;
+wire [7:0]idataaddr;
+wire [7:0]idatares;
 hd44780 hd44780drv1 (
     .clk(clk250khz),
     .rst(debrst),
@@ -36,8 +38,10 @@ hd44780 hd44780drv1 (
     .e(e),
     .rs(rs),
     .db(db),
-    .idata("a")
+    .idata(idatares),
+    .idataaddr(idataaddr)
 );
+assign idatares = "a" + idataaddr;
 assign led[0] = !busy;
 assign led[2] = !debrst;
 assign led[4] = !rst;

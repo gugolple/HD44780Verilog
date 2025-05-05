@@ -84,12 +84,12 @@ localparam [`INST_WIDTH-1:0]INST_SET_CGRAM_ADDR  = 8'b01000000;
 // All DDRAM definitions
 // Used for setting the cursor position
 // They are used to set at the line start
-localparam INST_SET_DDRAM_ADDR_MASK = 8'b01111111;
+localparam [`INST_WIDTH-1:0]INST_SET_DDRAM_ADDR_MASK = 8'b01111111;
 localparam [`INST_WIDTH-1:0]INST_SET_DDRAM_ADDR  = 8'b10000000;
-localparam HD44780_START_ADD_L1 = 8'h00;
-localparam HD44780_START_ADD_L2 = 8'h40;
-localparam HD44780_START_ADD_L3 = 8'h10;
-localparam HD44780_START_ADD_L4 = 8'h50;
+localparam [`INST_WIDTH-1:0]HD44780_START_ADD_L1 = 8'h00;
+localparam [`INST_WIDTH-1:0]HD44780_START_ADD_L2 = 8'h40;
+localparam [`INST_WIDTH-1:0]HD44780_START_ADD_L3 = 8'h10;
+localparam [`INST_WIDTH-1:0]HD44780_START_ADD_L4 = 8'h50;
 localparam [`INST_WIDTH-1:0]INST_SET_DDRAM_ADDR_L1  = INST_SET_DDRAM_ADDR
 | (HD44780_START_ADD_L1 & INST_SET_DDRAM_ADDR_MASK);
 localparam [`INST_WIDTH-1:0]INST_SET_DDRAM_ADDR_L2  = INST_SET_DDRAM_ADDR
@@ -123,7 +123,7 @@ always @(posedge clk, negedge rst) begin
         re <= 1'b0;
         rdb <= {`BUS_WIDTH {1'b0}};
         timecounter <= {`TIMECOUNTERWIDHT {1'b0}}; // Set to 0
-    end else begin        
+    end else if(busy_reset) begin        
         `define TIME_START 100
         `define FUNCTION_SET_1_HIGH (`TIME_START + `POWERON_DELAY_CYCLES)
         `define FUNCTION_SET_1_LOW (`FUNCTION_SET_1_HIGH + `INTER_INSTRUCTION_DELAY)
@@ -270,7 +270,7 @@ always @(posedge clk, negedge rst, posedge trg) begin
             // Loop for printing both secuences of lines
             // - First L1 and L3
             // - Second L2 and L4
-            for (i=0; i<1; i=i+1) begin
+            for (i=3; i<4; i=i+1) begin
                 // Initial set instruction
                 case (printcounter)
                     delaycounter: begin
