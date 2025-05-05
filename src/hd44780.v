@@ -23,19 +23,22 @@
 `define MAX_MEM_BITS $clog2(`MAX_MEM)
 module hd44780
 (
+    // Inputs
     input clk,
     input rst,
     input trg,
+    // Outputs
     output busy,
-    // Test only for flags
-    output reg busy_reset,
-    // Test only for flags
-    output reg busy_print,
     output e,
     output rs,
     output [`BUS_WIDTH-1:0] db,
+    // Mem Accessing
     output reg [`MAX_MEM_BITS-1:0]idataaddr,
-    input [`INST_WIDTH-1:0] idata
+    input [`INST_WIDTH-1:0] idata,
+    // Test only for flags
+    output reg busy_reset,
+    // Test only for flags
+    output reg busy_print
 );
 reg coldboot = 1'b1;
 ////////////////////////////////////////////////////////////////////////////////
@@ -309,10 +312,10 @@ always @(posedge clk, negedge rst, posedge trg) begin
                     case(printcounter)
                         delaycounter: begin
                             idataaddr <= tmp[`MAX_MEM_BITS-1:0];
-                            pe <= 1'b1;
-                            prs <= 1'b1;
                         end
                         delaycounter + 1 * `INTER_INSTRUCTION_DELAY: begin
+                            pe <= 1'b1;
+                            prs <= 1'b1;
                             pdb <= idata[7:4];
                         end
                         delaycounter + 2 * `INTER_INSTRUCTION_DELAY: begin
@@ -320,10 +323,10 @@ always @(posedge clk, negedge rst, posedge trg) begin
                         end
                         delaycounter + 3 * `INTER_INSTRUCTION_DELAY + `HALF_COMMAND_DELAY_CYCLES: begin
                             idataaddr <= tmp[`MAX_MEM_BITS-1:0];
-                            pe <= 1'b1;
-                            prs <= 1'b1;
                         end
                         delaycounter + 4 * `INTER_INSTRUCTION_DELAY + `HALF_COMMAND_DELAY_CYCLES: begin
+                            pe <= 1'b1;
+                            prs <= 1'b1;
                             pdb <= idata[3:0];
                         end
                         delaycounter + 5 * `INTER_INSTRUCTION_DELAY + `HALF_COMMAND_DELAY_CYCLES: begin
