@@ -264,8 +264,9 @@ always @(posedge clk, negedge rst, posedge trg) begin
         prs <= 1'b0;
         pe <= 1'b0;
         pdb <= {`BUS_WIDTH {1'b0}};
+        idataaddr <= {`MAX_MEM_BITS {1'b0}};
     end else begin
-        if (busy_print) begin
+        if (!busy_reset & busy_print) begin
             // Loop for printing both secuences of lines
             // - First L1 and L3
             // - Second L2 and L4
