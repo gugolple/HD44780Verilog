@@ -1,13 +1,14 @@
 `define LEDARRAY 6
 `define LEDARRAYLAST `LEDARRAY-1
-`define HD44780BUS 4
+`define EXTERNALDBSIZE 8
+`define HD44780BUS 8
 module top (
   input clk,
   input rst,
   output [`LEDARRAYLAST:0] led,
   output e,
   output rs,
-  output [`HD44780BUS-1:0]db
+  output [`EXTERNALDBSIZE-1:0]db
 );
 
 
@@ -30,14 +31,14 @@ clockdivider
 wire busy;
 wire [7:0]idataaddr;
 wire [7:0]idatares;
-hd44780 hd44780drv1 (
+hd447808b hd44780drv1 (
     .clk(clk250khz),
     .rst(debrst),
     .trg(1'b0),
     .busy(busy),
     .e(e),
     .rs(rs),
-    .db(db),
+    .db(db[`EXTERNALDBSIZE-1:`EXTERNALDBSIZE-`HD44780BUS]),
     .idata(idatares),
     .idataaddr(idataaddr)
 );

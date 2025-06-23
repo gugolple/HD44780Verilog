@@ -23,7 +23,7 @@
 `define PRINT_LENGTH `LINE_WIDTH
 `define MAX_MEM 4*`LINE_WIDTH
 `define MAX_MEM_BITS $clog2(`MAX_MEM)
-module hd44780
+module hd447804b
 (
     // Inputs
     input clk,
