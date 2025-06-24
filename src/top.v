@@ -3,7 +3,7 @@
 `define EXTERNALDBSIZE 8
 `define HD44780BUS 8
 module top (
-  input clk,
+  input clk, // CLK in is 27MHz
   input rst,
   output [`LEDARRAYLAST:0] led,
   output e,
