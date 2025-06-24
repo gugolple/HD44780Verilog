@@ -1,7 +1,7 @@
 `define LEDARRAY 6
 `define LEDARRAYLAST `LEDARRAY-1
 `define EXTERNALDBSIZE 8
-`define HD44780BUS 8
+`define HD44780BUS 4
 module top (
   input clk, // CLK in is 27MHz
   input rst,
@@ -21,7 +21,7 @@ debouncer #(.DIV_CNT(20)) inc_btn(
 wire clk250khz;
 clockdivider 
   #(
-    .CLOCK_COUNT(60)
+    .CLOCK_COUNT(108)
   ) clkdiv250khz (
     .clk(clk), 
     .rst(debrst),
@@ -31,7 +31,7 @@ clockdivider
 wire busy;
 wire [7:0]idataaddr;
 wire [7:0]idatares;
-hd447808b hd44780drv1 (
+hd447804b hd44780drv1 (
     .clk(clk250khz),
     .rst(debrst),
     .trg(1'b0),

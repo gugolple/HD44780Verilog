@@ -19,7 +19,7 @@
 `define INTER_INSTRUCTION_DELAY 10
 //8 bit mode
 `define BUS_WIDTH 4
-`define LINE_WIDTH 16
+`define LINE_WIDTH 20
 `define PRINT_LENGTH `LINE_WIDTH
 `define MAX_MEM 4*`LINE_WIDTH
 `define MAX_MEM_BITS $clog2(`MAX_MEM)
@@ -84,20 +84,23 @@ localparam [`INST_WIDTH-1:0]INST_SET_CGRAM_ADDR  = 8'b01000000;
 // All DDRAM definitions
 // Used for setting the cursor position
 // They are used to set at the line start
+`define MHD44780_START_ADD_L1 8'h00
+`define MHD44780_START_ADD_L2 8'h40
+
 localparam [`INST_WIDTH-1:0]INST_SET_DDRAM_ADDR_MASK = 8'b01111111;
 localparam [`INST_WIDTH-1:0]INST_SET_DDRAM_ADDR  = 8'b10000000;
-localparam [`INST_WIDTH-1:0]HD44780_START_ADD_L1 = 8'h00;
-localparam [`INST_WIDTH-1:0]HD44780_START_ADD_L2 = 8'h40;
-localparam [`INST_WIDTH-1:0]HD44780_START_ADD_L3 = 8'h10;
-localparam [`INST_WIDTH-1:0]HD44780_START_ADD_L4 = 8'h50;
+localparam [`INST_WIDTH-1:0]HD44780_START_ADD_L1 = `MHD44780_START_ADD_L1;
+localparam [`INST_WIDTH-1:0]HD44780_START_ADD_L2 = `MHD44780_START_ADD_L2;
+localparam [`INST_WIDTH-1:0]HD44780_START_ADD_L3 = `MHD44780_START_ADD_L1 + `LINE_WIDTH;
+localparam [`INST_WIDTH-1:0]HD44780_START_ADD_L4 = `MHD44780_START_ADD_L2 + `LINE_WIDTH;
 localparam [`INST_WIDTH-1:0]INST_SET_DDRAM_ADDR_L1  = INST_SET_DDRAM_ADDR
-| (HD44780_START_ADD_L1 & INST_SET_DDRAM_ADDR_MASK);
+| (HD44780_START_ADD_L1);
 localparam [`INST_WIDTH-1:0]INST_SET_DDRAM_ADDR_L2  = INST_SET_DDRAM_ADDR
-| (HD44780_START_ADD_L2 & INST_SET_DDRAM_ADDR_MASK);
+| (HD44780_START_ADD_L2);
 localparam [`INST_WIDTH-1:0]INST_SET_DDRAM_ADDR_L3  = INST_SET_DDRAM_ADDR
-| (HD44780_START_ADD_L3 & INST_SET_DDRAM_ADDR_MASK);
+| (HD44780_START_ADD_L3);
 localparam [`INST_WIDTH-1:0]INST_SET_DDRAM_ADDR_L4  = INST_SET_DDRAM_ADDR
-| (HD44780_START_ADD_L4 & INST_SET_DDRAM_ADDR_MASK);
+| (HD44780_START_ADD_L4);
 
 //// Debug for the macros/localparam definitions
 //// It is shown at the beginning of the test/run
@@ -270,7 +273,7 @@ always @(posedge clk, negedge rst, posedge trg) begin
             // Loop for printing both secuences of lines
             // - First L1 and L3
             // - Second L2 and L4
-            for (i=3; i<4; i=i+1) begin
+            for (i=0; i<4; i=i+1) begin
                 // Initial set instruction
                 case (printcounter)
                     delaycounter: begin
@@ -307,7 +310,7 @@ always @(posedge clk, negedge rst, posedge trg) begin
                 // a command.
                 delaycounter = delaycounter + 4 * `INTER_INSTRUCTION_DELAY + `CLEAR_SCREEN_DELAY_CYCLES + `HALF_COMMAND_DELAY_CYCLES;
                 for(j=0; j<`PRINT_LENGTH ; j=j+1) begin
-                    tmp = (j | i << `MAX_MEM_BITS-1);
+                    tmp = (j + i);
                     case(printcounter)
                         delaycounter: begin
                             idataaddr <= tmp[`MAX_MEM_BITS-1:0];
