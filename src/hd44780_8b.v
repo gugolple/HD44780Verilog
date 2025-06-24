@@ -213,7 +213,7 @@ always @(posedge clk, negedge rst, posedge trg) begin
                         busy_print <= 1'b1;
                         pe <= 1'b1;
                         prs <= 1'b0;
-                        case(printcounter)
+                        case(i)
                             0: pdb <= INST_SET_DDRAM_ADDR_L1;
                             1: pdb <= INST_SET_DDRAM_ADDR_L2;
                             2: pdb <= INST_SET_DDRAM_ADDR_L3;
@@ -227,7 +227,7 @@ always @(posedge clk, negedge rst, posedge trg) begin
                 endcase
                 // Move forward delaycounter all steps + 1 + the delay for
                 // a command.
-                delaycounter = delaycounter + 4 * `INTER_INSTRUCTION_DELAY + `CLEAR_SCREEN_DELAY_CYCLES + 100;
+                delaycounter = delaycounter + 4 * `INTER_INSTRUCTION_DELAY + `CLEAR_SCREEN_DELAY_CYCLES;
                 tmp = (i);
                 for(j=0; j<`PRINT_LENGTH ; j=j+1) begin
                     case(printcounter)

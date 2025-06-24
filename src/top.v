@@ -42,7 +42,7 @@ hd447808b hd44780drv1 (
     .idata(idatares),
     .idataaddr(idataaddr)
 );
-assign idatares = "a" + idataaddr;
+assign idatares = "A" + idataaddr;
 assign led[0] = !busy;
 assign led[2] = !debrst;
 assign led[4] = !rst;
