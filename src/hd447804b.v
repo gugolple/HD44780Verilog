@@ -21,8 +21,7 @@
 `define BUS_WIDTH 4
 `define LINE_WIDTH 20
 `define PRINT_LENGTH `LINE_WIDTH
-`define MAX_MEM 4*`LINE_WIDTH
-`define MAX_MEM_BITS $clog2(`MAX_MEM)
+`define MAX_MEM_BITS 2 + 6 // 2 bits for line and 6 for character
 module hd447804b
 (
     // Inputs
@@ -40,7 +39,9 @@ module hd447804b
     // Test only for flags
     output reg busy_reset,
     // Test only for flags
-    output reg busy_print
+    output reg busy_print,
+    // Test signal for idataaddr set
+    output reg idataaddr_rdy
 );
 reg coldboot = 1'b1;
 ////////////////////////////////////////////////////////////////////////////////
@@ -268,6 +269,7 @@ always @(posedge clk, negedge rst, posedge trg) begin
         pe <= 1'b0;
         pdb <= {`BUS_WIDTH {1'b0}};
         idataaddr <= {`MAX_MEM_BITS {1'b0}};
+        idataaddr_rdy <= 1'b0;
     end else begin
         if (!busy_reset & busy_print) begin
             // Loop for printing both secuences of lines
@@ -304,32 +306,38 @@ always @(posedge clk, negedge rst, posedge trg) begin
                     end
                     delaycounter + 3 * `INTER_INSTRUCTION_DELAY + `HALF_COMMAND_DELAY_CYCLES: begin
                         pe <= 1'b0;
+			idataaddr_rdy <= 1'b0;
                     end
                 endcase
                 // Move forward delaycounter all steps + 1 + the delay for
                 // a command.
                 delaycounter = delaycounter + 4 * `INTER_INSTRUCTION_DELAY + `CLEAR_SCREEN_DELAY_CYCLES + `HALF_COMMAND_DELAY_CYCLES;
                 for(j=0; j<`PRINT_LENGTH ; j=j+1) begin
-                    tmp = (j + i);
+                    tmp = i<<6 | j;
                     case(printcounter)
                         delaycounter: begin
                             idataaddr <= tmp[`MAX_MEM_BITS-1:0];
+			    $display(idataaddr);
+                            idataaddr_rdy <= 1'b1;
                         end
                         delaycounter + 1 * `INTER_INSTRUCTION_DELAY: begin
                             pe <= 1'b1;
                             prs <= 1'b1;
                             pdb <= idata[7:4];
+                            idataaddr_rdy <= 1'b0;
                         end
                         delaycounter + 2 * `INTER_INSTRUCTION_DELAY: begin
                             pe <= 1'b0;
                         end
                         delaycounter + 3 * `INTER_INSTRUCTION_DELAY + `HALF_COMMAND_DELAY_CYCLES: begin
                             idataaddr <= tmp[`MAX_MEM_BITS-1:0];
+                            idataaddr_rdy <= 1'b1;
                         end
                         delaycounter + 4 * `INTER_INSTRUCTION_DELAY + `HALF_COMMAND_DELAY_CYCLES: begin
                             pe <= 1'b1;
                             prs <= 1'b1;
                             pdb <= idata[3:0];
+                            idataaddr_rdy <= 1'b0;
                         end
                         delaycounter + 5 * `INTER_INSTRUCTION_DELAY + `HALF_COMMAND_DELAY_CYCLES: begin
                             pe <= 1'b0;
