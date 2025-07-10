@@ -285,6 +285,7 @@ always @(posedge clk, negedge rst, posedge trg) begin
                         busy_print <= 1'b1;
                         pe <= 1'b1;
                         prs <= 1'b0;
+                        $display("Line: ", i, " High");
                         case(i)
                             0: pdb <= INST_SET_DDRAM_ADDR_L1[7:4];
                             1: pdb <= INST_SET_DDRAM_ADDR_L2[7:4];
@@ -299,6 +300,7 @@ always @(posedge clk, negedge rst, posedge trg) begin
                     delaycounter + 2 * `INTER_INSTRUCTION_DELAY + `HALF_COMMAND_DELAY_CYCLES: begin
                         pe <= 1'b1;
                         prs <= 1'b0;
+                        $display("Line: ", i, " Low");
                         case(i)
                             0: pdb <= INST_SET_DDRAM_ADDR_L1[3:0];
                             1: pdb <= INST_SET_DDRAM_ADDR_L2[3:0];
@@ -320,14 +322,15 @@ always @(posedge clk, negedge rst, posedge trg) begin
                     case(printcounter)
                         delaycounter: begin
                             idataaddr <= tmp[`MAX_MEM_BITS-1:0];
-			    $display(idataaddr);
                             idataaddr_rdy <= 1'b1;
+                            $display("Line: ", i, " char at: ", tmp, " idataaddr H: ", idataaddr);
                         end
                         delaycounter + 1 * `INTER_INSTRUCTION_DELAY: begin
                             pe <= 1'b1;
                             prs <= 1'b1;
                             pdb <= idata[7:4];
                             idataaddr_rdy <= 1'b0;
+                            $display("Line: ", i, " char at: ", tmp, " idata high: ", pdb);
                         end
                         delaycounter + 2 * `INTER_INSTRUCTION_DELAY: begin
                             pe <= 1'b0;
@@ -335,12 +338,14 @@ always @(posedge clk, negedge rst, posedge trg) begin
                         delaycounter + 3 * `INTER_INSTRUCTION_DELAY + `HALF_COMMAND_DELAY_CYCLES: begin
                             idataaddr <= tmp[`MAX_MEM_BITS-1:0];
                             idataaddr_rdy <= 1'b1;
+                            $display("Line: ", i, " char at: ", tmp, " idataaddr L: ", idataaddr);
                         end
                         delaycounter + 4 * `INTER_INSTRUCTION_DELAY + `HALF_COMMAND_DELAY_CYCLES: begin
                             pe <= 1'b1;
                             prs <= 1'b1;
                             pdb <= idata[3:0];
                             idataaddr_rdy <= 1'b0;
+                            $display("Line: ", i, " char at: ", tmp, " idata high: ", pdb);
                         end
                         delaycounter + 5 * `INTER_INSTRUCTION_DELAY + `HALF_COMMAND_DELAY_CYCLES: begin
                             pe <= 1'b0;
