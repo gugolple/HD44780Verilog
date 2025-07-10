@@ -21,7 +21,10 @@
 `define BUS_WIDTH 4
 `define LINE_WIDTH 20
 `define PRINT_LENGTH `LINE_WIDTH
-`define MAX_MEM_BITS 2 + 6 // 2 bits for line and 6 for character
+// 2 bits for line and 5 for character
+// This will be 32 characters * 4 lines = 128 bytes
+`define MAX_MEM_BITS (2 + 5)
+
 module hd447804b
 (
     // Inputs
@@ -306,14 +309,14 @@ always @(posedge clk, negedge rst, posedge trg) begin
                     end
                     delaycounter + 3 * `INTER_INSTRUCTION_DELAY + `HALF_COMMAND_DELAY_CYCLES: begin
                         pe <= 1'b0;
-			idataaddr_rdy <= 1'b0;
+                        idataaddr_rdy <= 1'b0;
                     end
                 endcase
                 // Move forward delaycounter all steps + 1 + the delay for
                 // a command.
                 delaycounter = delaycounter + 4 * `INTER_INSTRUCTION_DELAY + `CLEAR_SCREEN_DELAY_CYCLES + `HALF_COMMAND_DELAY_CYCLES;
                 for(j=0; j<`PRINT_LENGTH ; j=j+1) begin
-                    tmp = i<<6 | j;
+                    tmp = i<<5 | j;
                     case(printcounter)
                         delaycounter: begin
                             idataaddr <= tmp[`MAX_MEM_BITS-1:0];
